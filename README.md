@@ -2,7 +2,7 @@
 Source: www.52ynn.top
 # TODO
 
-- Install hexo
+- Install hexo  done
 - Config theme
 - Migrate data
 - Check blogs
