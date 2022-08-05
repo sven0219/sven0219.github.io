@@ -23,7 +23,7 @@ systemctl stop firewalld.service
 ```
 
 步骤 2 关闭开机自启
-
+<!--more-->
 ```bash
 systemctl disable firewalld.service
 ```

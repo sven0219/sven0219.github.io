@@ -13,7 +13,7 @@ date: 2019-11-12 14:44:16
 # Docker 安装
 
 直接前往[官方文档](https://docs.docker.com/install/ "官方文档")选择合适的平台安装即可，比如我们这里想要在centos系统上安装 Docker，这前往[地址](https://docs.docker.com/install/linux/docker-ce/centos/ "地址")根据提示安装即可。 安装依赖包
-
+<!--more-->
 ```bash
 $ sudo yum install -y yum-utils device-mapper-persistent-data lvm2
 ```

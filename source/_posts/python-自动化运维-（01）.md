@@ -13,7 +13,7 @@ date: 2020-03-21 23:03:46
 # 前面的话
 
 > 学习记录，记录中再次学习 所有代码基本上都是实际测试过 操作系统 macOS Catalina Python版本：3.7 所有代码可在 [GitHub](https://github.com/Swq1227/devops "GitHub") 获取
-
+<!--more-->
 # 系统性能监控模块 psutil
 
 ## 介绍

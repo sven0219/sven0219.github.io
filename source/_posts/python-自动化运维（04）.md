@@ -11,7 +11,7 @@ date: 2020-04-01 20:02:34
 ---
 
 > 操作系统 macOS Catalina Python版本：3.7 所有代码可在 [GitHub](https://github.com/Swq1227/devops "GitHub") 获取
-
+<!--more-->
 # 文件与目录差异对比方法
 
 ## 1\. 文件内容差异对比方法

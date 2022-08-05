@@ -20,7 +20,7 @@ IP地址
 
 hostname
 
-10.158.1.9
+10.158.1.9<!--more-->
 
 k8s-master-03
 

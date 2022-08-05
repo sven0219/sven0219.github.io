@@ -10,6 +10,7 @@ date: 2022-05-27 19:27:23
 ---
 
 This week is the first week that i joined the WiredCraft.
+<!--more-->
 
 **There are lots of things new for me :**
 

@@ -13,7 +13,7 @@ date: 2021-06-02 15:00:12
 # 1\. 搭建 k8s 环境平台规划
 
 单 master 集群 [![](https://i.loli.net/2021/06/02/DpF3i9LPKOBrRfa.jpg)](https://i.loli.net/2021/06/02/DpF3i9LPKOBrRfa.jpg) 多 master 集群 [![](https://i.loli.net/2021/06/02/yviN3Qut594kBrI.jpg)](https://i.loli.net/2021/06/02/yviN3Qut594kBrI.jpg)
-
+<!--more-->
 # 2\. 准备
 
 ## 2.1 机器准备

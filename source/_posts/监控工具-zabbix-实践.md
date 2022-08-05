@@ -16,6 +16,7 @@ date: 2020-08-18 13:59:03
 
 > zabbix 是一个基于WEB界面的提供分布式系统监视以及网络监视功能的企业级的开源解决方案。 zabbix能监视各种网络参数，保证服务器系统的安全运营；并提供灵活的通知机制以让系统管理员快速定位/解决存在的各种问题。 zabbix由2部分构成，zabbix server与可选组件zabbix agent。 zabbix server可以通过SNMP，zabbix agent，ping，端口监视等方法提供对远程服务器/网络状态的监视，数据收集等功能，它可以运行在Linux，Solaris，HP-UX，AIX，Free BSD，Open BSD，OS X等平台上。
 
+<!--more-->
 # 安装
 
 这里我用的机器是阿里云采购的 ECS，系统版本如下 [![](https://i.loli.net/2020/08/18/NGFpVQa3q8Uz7T6.jpg)](https://i.loli.net/2020/08/18/NGFpVQa3q8Uz7T6.jpg) 使用的 zabbix 为目前最新版本，zabbix5.0，使用二进制包安装，数据库使用的位 mysql5.7。 [![](https://i.loli.net/2020/08/18/c6bOi14uBNZkeaF.jpg)](https://i.loli.net/2020/08/18/c6bOi14uBNZkeaF.jpg)

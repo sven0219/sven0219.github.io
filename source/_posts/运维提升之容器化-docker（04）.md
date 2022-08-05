@@ -16,7 +16,7 @@ date: 2019-12-26 16:33:00
 ## 介绍
 
 `Dockerfile` 是一个文本文件，其内包含了一条条的指令(`Instruction`)，每一条指令构建一层，因此每一条指令的内容，就是描述该层应当如何构建。 还以之前定制 `nginx` 镜像为例，这次我们使用 `Dockerfile` 来定制。在一个空白目录中，建立一个文本文件，并命名为 `Dockerfile`：
-
+<!--more-->
 ```
 $ mkdir mynginx
 $ cd mynginx

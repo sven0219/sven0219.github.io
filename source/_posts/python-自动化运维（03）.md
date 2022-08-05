@@ -11,7 +11,7 @@ date: 2020-03-24 21:57:41
 ---
 
 > 操作系统 macOS Catalina Python版本：3.7 所有代码可在 [GitHub](https://github.com/Swq1227/devops "GitHub") 获取
-
+<!--more-->
 # DNS 处理模块 dnspython
 
 `dnspython`是 Python 实现的一个 DNS 工具包，它几乎支持所有的记录类型，可以用于查询。传输并动态更新 ZONE 信息，同时支持 TSIG（事务签名）验证消息和 EDNS0（扩展 DNS）。

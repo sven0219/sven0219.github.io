@@ -23,7 +23,7 @@ yum -y install pcre-devel zlib-devel gcc gcc+c++ make openssl-devel pcre-devel  
 # 下载 nginx 安装包
 
 这里下载最新的稳定版本 [1.16.1](http://nginx.org/download/nginx-1.16.1.tar.gz "1.16.1")
-
+<!--more-->
 ```bash
 wget http://nginx.org/download/nginx-1.16.1.tar.gz
 ```

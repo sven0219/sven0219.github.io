@@ -18,7 +18,7 @@ date: 2020-04-15 20:42:41
 #### 1\. Linux 开机加载顺序
 
 1 加载BIOS硬件信息, 并获取第一个启动设备的代号; 2 读取第一个启动设备的MBR的引导加载程序的启动信息; 3 加载核心操作系统的核心信息, 核心开始解压缩, 并且尝试驱动所有的硬件设备; 4 核心执行init程序并获取运行信息; 5 init执行/etc/init.d的脚本; 6 启动核心的外挂模块/etc/modeprobe.d/中的脚本; 7 init执行运行各个批处理脚本; 8 init执行/etc/init.d/rc.local文件; 9 执行/bin/login程序, 等待用户登录; 10 登录之后开始以shell控制主机.
-
+<!--more-->
 #### 2\. 用户登录加载的配置文件顺序
 
 登录式shell加载配置文件过程 `/etc/profile --> /etc/profile.d/*.sh --> ~/.bash_profile --> ~/.bashrc --> /etc/bashrc` 非登录式shell加载配置文件过程 `~/.bashrc --> /etc/bashrc --> /etc/profile.d/*.sh`

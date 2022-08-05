@@ -20,7 +20,7 @@ Keepalived+mysql双主来实现MySQL-HA，我们必须保证两台MySQL数据库
 ## 1\. 环境准备
 
 角色
-
+<!--more-->
 ip
 
 master1

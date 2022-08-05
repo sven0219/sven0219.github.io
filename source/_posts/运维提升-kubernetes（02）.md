@@ -17,7 +17,7 @@ date: 2020-03-23 21:50:58
 ## Master
 
 `Kubernetes`里面 Master指的是集群控制节点，每个 Kubernetes 集群里面都需要有一个Master节点负责整个集群的管理和控制，基本上 Kubernetes 的所有控制指令都发送给它，它负责具体的执行过程。Master节点一般占据一个独立的服务器（高可用部署建议使用 3 台服务器），如果 Master节点宕机或者不可以，那么集群内容器应用的管理都将失效（不像 zookeeper 一样可以推选出一个新的 master 节点） Master节点上运行着一组关键进程：
-
+<!--more-->
 *   Kubernetes API Servre (kube-apiserver): 提供了 HTTP Rest 接口的关键服务进程， Kubernetes 里所有资源的增删改查等操作的唯一入口，也是集群控制的入口进程。
 *   Kubernetes Controller Manager（kube-controller-manager）: Kubernetes 里面所有资源对象的自动化控制中心，可以理解为资源对象的‘大总管’。
 *   Kuberneter Scheduler (kube-scheduler): 负责资源调度（Pod 调度）的进程，相当于公司的‘调度室’。

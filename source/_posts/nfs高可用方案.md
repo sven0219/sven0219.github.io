@@ -21,7 +21,7 @@ date: 2020-04-03 19:58:36
 ### 1.2 网络拓扑图
 
 当 Master NFS 服务正常时 [![](https://i.loli.net/2020/06/17/CyFrMB2T7WuVk6S.jpg)](https://i.loli.net/2020/06/17/CyFrMB2T7WuVk6S.jpg) 当 Master NFS 服务宕机时 [![](https://i.loli.net/2020/06/17/hZY89BAksxK4WN2.jpg)](https://i.loli.net/2020/06/17/hZY89BAksxK4WN2.jpg)
-
+<!--more-->
 ## 2.安装前准备
 
 服务器信息：

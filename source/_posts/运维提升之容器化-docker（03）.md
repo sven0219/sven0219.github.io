@@ -15,7 +15,7 @@ date: 2019-12-05 09:55:00
 ## 获取镜像
 
 Docker 官方提供了一个公共的镜像仓库：[Docker Hub](https://hub.docker.com/explore/ "Docker Hub")，我们就可以从这上面获取镜像，获取镜像的命令：docker pull，格式为：
-
+<!--more-->
 ```bash
 $ docker pull [选项] [Docker Registry 地址[:端口]/]仓库名[:标签]
 ```

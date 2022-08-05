@@ -16,7 +16,7 @@ date: 2020-07-15 13:41:14
 # 什么是 DNSmasq
 
 Dnsmasq提供DNS缓存和DHCP服务、Tftp服务功能。作为域名解析服务器(DNS)，Dnsmasq可以通过缓存DNS请求来提高对访问过的网址的连接速度。作为DHCP服务器，Dnsmasq可以为局域网电脑提供内网ip地址和路由。DNS和DHCP两个功能可以同时或分别单独实现。Dnsmasq轻量且易配置，适用于个人用户或少于50台主机的网络。此外它还自带了一个PXE服务器。
-
+<!--more-->
 # DNSmasq 主要作用
 
 1.  将Dnsmasq作为本地DNS服务器使用，直接修改电脑的本地DNS的IP地址即可。

@@ -18,6 +18,7 @@ Docker分为CE和EE两大版本.CE免费,支持周期7个月,EE付费,支持周�
 ```
 Docker CE支持64位版本CentOS7,并且要求内核版本不低于3.10。
 ```
+<!--more-->
 
 根据官方文档：https://docs.docker.com/install/linux/docker-ce/centos/搭建docker
 

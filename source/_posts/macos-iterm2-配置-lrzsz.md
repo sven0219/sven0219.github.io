@@ -22,7 +22,7 @@ Mac OS 11.1.0 ITerm2 3.4.3
 [官网](https://iterm2.com/ "官网")下载安装就可以了，不赘述了.
 
 # 安装 rz sz
-
+<!--more-->
 ```bash
 # 需要先安装 homebrew
 brew install lrzsz

@@ -20,7 +20,7 @@ PASS_MIN_DAYS    0
 PASS_MIN_LEN    5
 PASS_WARN_AGE    7
 ```
-
+<!--more-->
 加固方案
 
 ```

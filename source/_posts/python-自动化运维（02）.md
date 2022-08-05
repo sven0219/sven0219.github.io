@@ -11,7 +11,7 @@ date: 2020-03-24 21:04:04
 ---
 
 > 操作系统 macOS Catalina Python版本：3.7 所有代码可在 [GitHub](https://github.com/Swq1227/devops "GitHub") 获取
-
+<!--more-->
 # IP 地址处理模块 IPy
 
 IP 地址规划是网络设计中的一个重要环节，IPy 模块可以很好的辅助我们高效的完成 IP 的规划工作。 安装过程就不再赘述了，和安装 psutil 一样的方式即可。

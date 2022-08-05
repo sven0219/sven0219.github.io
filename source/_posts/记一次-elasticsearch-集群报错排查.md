@@ -13,7 +13,7 @@ date: 2021-04-07 16:59:47
 1.  Kibana 页面报错链接不是 elasticsearch 集群
 2.  elasticsearch 索引信息状态为 red
 3.  日志报错 all shards failed
-
+<!--more-->
 # 排查记录
 
 1.  查看所有索引 `curl 'localhost:9288/_cat/indices?v`如下 [![](https://i.loli.net/2021/04/07/1obGtlNdk2vIUV8.jpg)](https://i.loli.net/2021/04/07/1obGtlNdk2vIUV8.jpg)

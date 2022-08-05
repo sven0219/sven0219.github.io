@@ -19,7 +19,7 @@ Docker容器应用的开发和运行离不开可靠的镜像管理，虽然Docke
 ## 2.docker-ce 安装
 
 [docker-ce 安装](https://www.52ynn.top/index.php/2019/10/02/centos%e5%ae%89%e8%a3%85docker-ce/ "docker-ce 安装")
-
+<!--more-->
 ## 3.docker-compose 安装
 
 ```

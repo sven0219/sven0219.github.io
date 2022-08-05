@@ -13,7 +13,7 @@ date: 2021-09-01 15:45:33
 # 联邦集群介绍
 
 对于大部分监控规模来说，只需要在一个数据中心（云服务可用区，k8s 集群）部署一个Promethues Server 实例就可以在各个数据中心处理上千规模的集群。同时将 Promethue Server 部署到不同的数据中心可以避免网络配置的复杂性。 [![](https://i.loli.net/2021/09/01/K8YTrJ5h2ae93ZL.jpg)](https://i.loli.net/2021/09/01/K8YTrJ5h2ae93ZL.jpg) 如上图所示，在每个数据中心部署单独的Prometheus Server，用于采集当前数据中心监控数据。并由一个中心的Prometheus Server负责聚合多个数据中心的监控数据。这一特性在Promthues中称为联邦集群。 联邦集群的核心在于每一个Prometheus Server都包含一个用于获取当前实例中监控样本的接口/federate。对于中心Prometheus Server而言，无论是从其他的Prometheus实例还是Exporter实例中获取数据实际上并没有任何差异。
-
+<!--more-->
 ```yaml
 scrape_configs:
   - job_name: 'federate'
