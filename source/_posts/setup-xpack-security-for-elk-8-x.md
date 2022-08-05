@@ -12,6 +12,8 @@ date: 2022-07-15 15:13:58
 
 > I use docker to run ELK,so all of the following operations are based on docker container operations,If you are running elk in other ways, note the path to execute the command.
 
+<!--more-->
+
 ## Generate the certificate authority
 
 1.  Use the `elasticsearch-certutil` tool on any single node to generate a CA for your cluster.
