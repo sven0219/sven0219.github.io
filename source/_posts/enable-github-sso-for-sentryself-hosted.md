@@ -13,7 +13,7 @@ date: 2022-06-12 21:40:39
 
 Once SSO be activated,
 
-All existing users will recevie a email to link their account before they are able to continue using Sentry（**This will happen automatically once SSO is successfully configured**）.
+All existing users will recevie a email to link their account before they are able to continue using Sentry（**This will happen automatically once SSO is successfully configured**）.<!--more-->
 
 Every member who creates a new account via SSO will be given global organization access with a member role.
 

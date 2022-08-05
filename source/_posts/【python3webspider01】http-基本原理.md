@@ -14,7 +14,7 @@ date: 2020-08-06 17:18:27
 
 ## 1\. URI 和 URL
 
-URI的全称为Uniform Resource Identifier，即统一资源标志符，URL的全称为Universal Resource Locator，即统一资源定位符。 简单来说，https://www.baidu.com/favicon.ico 是 Baidu 的网站图标链接，它是一个 URI 也是一个 URL。即有这样的一个图标资源，我们用URL/URI来唯一指定了它的访问方式，这其中包括了访问协议https、访问路径（/即根目录）和资源名称favicon.ico。通过这样一个链接，我们便可以从互联网上找到这个资源，这就是URL/URI。 URL是URI的子集，也就是说每个URL都是URI，但不是每个URI都是URL。URI 还包括一个子类叫做 URN，全称Universal Resource Name，即统一资源名称。URN只命名资源而不指定如何定位资源，比如一本书的ISBN，可以唯一标识这本书，但是没有指定到哪里定位这本书，这就是URN。
+URI的全称为Uniform Resource Identifier，即统一资源标志符，URL的全称为Universal Resource Locator，即统一资源定位符。 简单来说，https://www.baidu.com/favicon.ico 是 Baidu 的网站图标链接，它是一个 URI 也是一个 URL。即有这样的一个图标资源，我们用URL/URI来唯一指定了它的访问方式，这其中包括了访问协议https、访问路径（/即根目录）和资源名称favicon.ico。通过这样一个链接，我们便可以从互联网上找到这个资源，这就是URL/URI。 <!--more-->URL是URI的子集，也就是说每个URL都是URI，但不是每个URI都是URL。URI 还包括一个子类叫做 URN，全称Universal Resource Name，即统一资源名称。URN只命名资源而不指定如何定位资源，比如一本书的ISBN，可以唯一标识这本书，但是没有指定到哪里定位这本书，这就是URN。
 
 ## 2\. 超文本
 
