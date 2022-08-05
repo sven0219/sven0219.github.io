@@ -9,6 +9,7 @@ Source: www.52ynn.top
 - Config theme
 - Add pages 
 - Add categories
+- Add search
 - Upate old post
 - Check blogs
 - Config domain
