@@ -1,6 +1,8 @@
 ---
 title: Hello World
 date: 2022-08-05 21:26:00
+categories: 
+- Test
 tags:
 - Hello-world
 - First-post
