@@ -991,10 +991,6 @@ vendors:
   # canvas_ribbon: //cdn.jsdelivr.net/gh/theme-next/theme-next-canvas-ribbon@1/canvas-ribbon.js
   canvas_ribbon:
 
-auto_excerpt:
-  enable: false
-  length: 150
-
 # Assets
 css: css
 js: js
