@@ -5,6 +5,8 @@ Source: www.52ynn.top
 - Install hexo  done
 - Config theme
 - Migrate data
+- Add pages 
+- Add categories
 - Check blogs
 - Config domain
 - Change dns
