@@ -257,13 +257,6 @@ symbols_count_time:
 # Use icon instead of the symbol # to indicate the tag at the bottom of the post
 tag_icon: true
 
-# Post wordcount display settings
-# Dependencies: https://github.com/willin/hexo-wordcount
-post_wordcount:
-  item_text: true
-  wordcount: true
-  min2read: true
-
 # Reward (Donate)
 # Front-matter variable (unsupport animation).
 reward_settings:
