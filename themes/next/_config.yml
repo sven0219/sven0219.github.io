@@ -330,17 +330,6 @@ calendar:
   singleEvents: true
   maxResults: 250
 
-# Next Calendar
-#  https://github.com/theme-next/theme-next-calendar
-CloudCalendar:
-  enable: true
-  language: zh-CN
-  single: true
-  root: /calendar/
-  calendarCdn: //cdn.jsdelivr.net/gh/theme-next/theme-next-calendar/calendar.min.js
-  langCdn: //cdn.jsdelivr.net/gh/theme-next/theme-next-calendar/languages.min.js
-  #disableSidebar: false
-
 # ---------------------------------------------------------------
 # Misc Theme Settings
 # ---------------------------------------------------------------
