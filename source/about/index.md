@@ -2,15 +2,17 @@
 title: about
 date: 2022-08-05 21:16:09
 ---
-### 联系方式
+### Info
 ```
-姓名：Sven
-邮箱：swq1227@gmail.com
+name：Sven
+email：swq1227@gmail.com
 ```
-### 关于我
+### About me
 ```
-我是 Sven ，目前在上海从事运维工作，算半个程序员.
-平时喜欢听歌，喜欢 Eason.
-从18年至今一直从事运维方面的工作，会点java/python/go。
-
+I'm sven, working in devops in Shanghai.
+```
+### About blog
+```
+Start using github pages in August 2022.
+Generate static page with hexo and github action, theme is Next.
 ```
