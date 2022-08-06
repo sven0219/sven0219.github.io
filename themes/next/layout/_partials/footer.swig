@@ -10,6 +10,18 @@
   </div>
 {%- endif %}
 
+<div class="visitors-count">
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_uv">
+       Visitors :<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_pv">
+       Views : <span id="busuanzi_value_site_pv"></span>
+    </span>
+</div>
+
 <div class="copyright">
   {% set copyright_year = date(null, 'YYYY') %}
   &copy; {% if theme.footer.since and theme.footer.since != copyright_year %}{{ theme.footer.since }} – {% endif %}
@@ -42,17 +54,6 @@
   {%- endif %}
 </div>
 
-<div class="visitors-count">
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <i class="fa fa-user-md"></i>
-    <span id="busuanzi_container_site_uv">
-       Visitors :<span id="busuanzi_value_site_uv"></span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span id="busuanzi_container_site_pv">
-       Views : <span id="busuanzi_value_site_pv"></span>
-    </span>
-</div>
 
 {%- if theme.footer.powered %}
   <div class="powered-by">
