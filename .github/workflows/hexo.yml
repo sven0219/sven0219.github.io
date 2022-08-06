@@ -32,8 +32,11 @@ jobs:
           git config --global user.email "swq1227@gmail.com"
       - name: Install dependencies
         run: |
-          npm install hexo-wordcount --save && npm install hexo-deployer-git --save && npm install --force && npm i -g hexo-cli
+          npm install --force && npm i -g hexo-cli
           npm i
+      - name: Install plugins
+        run: |
+          npm install hexo-wordcount --save && npm install hexo-deployer-git --save 
       - name: Deploy hexo
         run: |
           hexo clean && hexo generate && hexo deploy
