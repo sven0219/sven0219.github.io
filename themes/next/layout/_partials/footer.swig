@@ -29,7 +29,7 @@
     {%- endif %}
     <span title="{{ __('symbols_count_time.count_total') }}">{{ symbolsCountTotal(site) }}</span>
   {%- endif %}
-
+/*
   {%- if config.symbols_count_time.total_time %}
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
@@ -42,6 +42,7 @@
   {%- endif %}
 </div>
 
+
 {%- if theme.footer.powered %}
   <div class="powered-by">
     {%- set next_site = 'https://theme-next.org' %}
@@ -51,7 +52,7 @@
     {{- __('footer.powered', next_url('https://hexo.io', 'Hexo', {class: 'theme-link'}) + ' & ' + next_url(next_site, 'NexT.' + theme.scheme, {class: 'theme-link'})) }}
   </div>
 {%- endif %}
-
+*/
 {%- if theme.add_this_id %}
   <div class="addthis_inline_share_toolbox">
     <script src="//s7.addthis.com/js/300/addthis_widget.js#pubid={{ theme.add_this_id }}" async="async"></script>
