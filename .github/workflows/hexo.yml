@@ -36,7 +36,7 @@ jobs:
           npm i
       - name: Install plugins
         run: |
-          npm install hexo-wordcount --save && npm install hexo-deployer-git --save 
+          npm install hexo-generator-searchdb --save && npm install hexo-wordcount --save && npm install hexo-deployer-git --save 
       - name: Deploy hexo
         run: |
           hexo clean && hexo generate && hexo deploy
