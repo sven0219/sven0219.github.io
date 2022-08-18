@@ -7,11 +7,8 @@ Source: www.52ynn.top
 - Add pages
 - Add categories
 - Add search
-
+- Update old post
 # TODO
 
-- Upate old post
 - Check blogs
-- Config domain
-- Change dns
 
