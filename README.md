@@ -1,5 +1,6 @@
 # Migrate wordpress to Github Pages 
-Source: www.52ynn.top
+Source: wordpress
+
 # Done
 - Install hexo
 - Migrate data
