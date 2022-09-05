@@ -17,7 +17,7 @@ I did the following：
 
 1. Use the mysqldump command to export sql file from their database
 2. Import the sql file into our database
-
+<!--more-->
 ## Issue Description
 
 The time to run the following sql on our database(14.3s) is significantly longer than on theirs(0.002s).
