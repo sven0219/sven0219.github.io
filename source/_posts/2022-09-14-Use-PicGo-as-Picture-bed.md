@@ -29,11 +29,11 @@ Ref: https://picgo.github.io/PicGo-Doc/en/guide/#instruction
 
 # Configuration
 
-## 1. Create and log in your GitHub account
+## Create and log in your GitHub account
 
 [Github](https://github.com)
 
-## 2. Create a repo for GitHub Img
+## Create a repo for GitHub Img
 
 Since I built the picture bed mainly for the blog you are currently visiting, so I created a new branch on [sven0219.github.io](https://github.com/sven0219/sven0219.github.io/tree/static_files)
 
@@ -41,7 +41,7 @@ You can also create a new repository.
 
 ![](https://raw.githubusercontent.com/sven0219/sven0219.github.io/static_files/blog/images/20220914193528.png)
 
-## 3. Generate a token for PicGo
+## Generate a token for PicGo
 
 open [Github setting](https://github.com/settings/tokens)
 
@@ -51,7 +51,7 @@ Generate new token for picture bed:
 
 ![](https://raw.githubusercontent.com/sven0219/sven0219.github.io/static_files/blog/images/20220914193947.png)
 
-## 4. Configure your GitHub repository for PicGo.
+## Configure your GitHub repository for PicGo.
 
 ![](https://raw.githubusercontent.com/sven0219/sven0219.github.io/static_files/blog/images/20220914194100.png)
 
