@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-
+      
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
@@ -30,6 +30,9 @@ jobs:
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           git config --global user.name "sven"
           git config --global user.email "swq1227@gmail.com"
+      - name: Config theme
+        run: |
+           sed -i 's/gitalkSecret/${{ OAUTH_SECRET }}/g'  ./themes/next/_config.yml
       - name: Install dependencies
         run: |
           npm install --force && npm i -g hexo-cli
