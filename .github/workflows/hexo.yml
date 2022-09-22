@@ -32,7 +32,7 @@ jobs:
           git config --global user.email "swq1227@gmail.com"
       - name: Config theme
         run: |
-           sed -i 's/gitalkSecret/${{ OAUTH_SECRET }}/g'  ./themes/next/_config.yml
+           sed -i 's/gitalkSecret/${{secrets.OAUTH_SECRET}}/g'  ./themes/next/_config.yml
       - name: Install dependencies
         run: |
           npm install --force && npm i -g hexo-cli
