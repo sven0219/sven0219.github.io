@@ -11,6 +11,7 @@ email：swq1227@gmail.com
 ```
 I'm sven, working in devops in Shanghai.
 ```
+[Stack](https://www.svenshen.com/stack/)
 ### About blog
 ```
 Start using github pages in August 2022.
