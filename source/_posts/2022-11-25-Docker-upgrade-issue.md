@@ -12,6 +12,7 @@ categories:
 
 We have a server running docker version `17.06`，one day there was a issue：[issue](https://github.com/docker/for-linux/issues/1)
 
+<!--more-->
 So yesterday we started upgrading Docker from `17.06` to `20.10`
 
 Then came the disaster that lasted for more than a day😂😂
