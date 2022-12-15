@@ -28,3 +28,5 @@ hexo new post "xxxx"
 ### Other 
 https://hexo.io/docs/commands
 
+# Themes
+https://theme-next.js.org/
