@@ -30,3 +30,6 @@ https://hexo.io/docs/commands
 
 # Themes
 https://theme-next.js.org/
+
+# blog
+https://www.svenshen.com
