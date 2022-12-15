@@ -11,7 +11,20 @@ ref: [WordPress2Hexo](https://hexo.io/zh-cn/docs/migration#WordPress)
 - Add categories
 - Add search
 - Update old post
-# TODO
-
 - Check blogs
+
+# Hexo
+
+### Install 
+```
+npm install -g hexo
+```
+
+### New post 
+```
+hexo new post "xxxx"
+```
+
+### Other 
+https://hexo.io/docs/commands
 
