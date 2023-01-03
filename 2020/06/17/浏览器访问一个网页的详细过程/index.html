@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.52ynn.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":true,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="概括打开浏览器，在地址栏输入 URL，回车，到出现网页内容，这是访问网站必须要经过的一个过程，这个过程可以概括为几个部分： 1. 域名解析成 IP 地址 2. 与目的主机进行 TCP 连接（三次握手） 3. 发送与收取数据（浏览器与目的主机开始 http 访问过程） 4. 与目的主机断开 TCP 连接（四次挥手）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浏览器访问一个网页的详细过程">
+<meta property="og:url" content="https://blog.52ynn.top/2020/06/17/%E6%B5%8F%E8%A7%88%E5%99%A8%E8%AE%BF%E9%97%AE%E4%B8%80%E4%B8%AA%E7%BD%91%E9%A1%B5%E7%9A%84%E8%AF%A6%E7%BB%86%E8%BF%87%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Sven&#39;s Blog">
+<meta property="og:description" content="概括打开浏览器，在地址栏输入 URL，回车，到出现网页内容，这是访问网站必须要经过的一个过程，这个过程可以概括为几个部分： 1. 域名解析成 IP 地址 2. 与目的主机进行 TCP 连接（三次握手） 3. 发送与收取数据（浏览器与目的主机开始 http 访问过程） 4. 与目的主机断开 TCP 连接（四次挥手）">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://i.loli.net/2020/06/17/8nhabEuVyXkrN5m.jpg">
+<meta property="article:published_time" content="2020-06-17T16:56:58.000Z">
+<meta property="article:modified_time" content="2023-01-03T04:48:39.634Z">
+<meta property="article:author" content="Sven">
+<meta property="article:tag" content="运维">
+<meta property="article:tag" content="DNS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/06/17/8nhabEuVyXkrN5m.jpg">
+
+<link rel="canonical" href="https://blog.52ynn.top/2020/06/17/%E6%B5%8F%E8%A7%88%E5%99%A8%E8%AE%BF%E9%97%AE%E4%B8%80%E4%B8%AA%E7%BD%91%E9%A1%B5%E7%9A%84%E8%AF%A6%E7%BB%86%E8%BF%87%E7%A8%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>浏览器访问一个网页的详细过程 | Sven's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Sven's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Do more ,say less !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://blog.52ynn.top/2020/06/17/%E6%B5%8F%E8%A7%88%E5%99%A8%E8%AE%BF%E9%97%AE%E4%B8%80%E4%B8%AA%E7%BD%91%E9%A1%B5%E7%9A%84%E8%AF%A6%E7%BB%86%E8%BF%87%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Sven">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sven's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          浏览器访问一个网页的详细过程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-17 16:56:58" itemprop="dateCreated datePublished" datetime="2020-06-17T16:56:58+00:00">2020-06-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-01-03 04:48:39" itemprop="dateModified" datetime="2023-01-03T04:48:39+00:00">2023-01-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/skills/" itemprop="url" rel="index"><span itemprop="name">skills</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.4k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="概括"><a href="#概括" class="headerlink" title="概括"></a>概括</h1><p>打开浏览器，在地址栏输入 URL，回车，到出现网页内容，这是访问网站必须要经过的一个过程，这个过程可以概括为几个部分： 1. 域名解析成 IP 地址 2. 与目的主机进行 TCP 连接（三次握手） 3. 发送与收取数据（浏览器与目的主机开始 http 访问过程） 4. 与目的主机断开 TCP 连接（四次挥手）</p>
+<span id="more"></span>
+<h1 id="域名解析成-IP-地址"><a href="#域名解析成-IP-地址" class="headerlink" title="域名解析成 IP 地址"></a>域名解析成 IP 地址</h1><p>访问目标地址有两种方式，一种是直接通过 ip 加端口进行访问，另外一种是使用域名访问，但是由于 IP 地址是一堆数字不方便记忆，所以就有了域名访问的方式，域名访问会通过 DNS 服务器将域名解析为 IP 地址。 <strong>DNS 解析有会通过如下顺序进行查找域名对应的 IP：</strong> 1. 浏览器首先搜索浏览器自身缓存的DNS记录 2. 如果浏览器缓存中没有找到需要的记录或记录已经过期，则搜索hosts文件。 3. 如果在hosts文件中没有找到需要的记录或记录已经过期，则向域名解析服务器发送解析请求。 <strong>DNS 域名解析使用的是 UDP 协议。整个域名解析过程如下：</strong> 1. 浏览器向本机DNS模块发出DNS请求，DNS模块生成相关的DNS报文； 2. DNS模块将生成的DNS报文传递给传输层的UDP协议单元； 3. UDP协议单元将该数据封装成UDP数据报，传递给网络层的IP协议单元； 4. IP协议单元将该数据封装成IP数据包，其目的IP地址为DNS服务器的IP地址； 5. 封装好的IP数据包将传递给数据链路层的协议单元进行发送； 6. 发送时在ARP缓存中查询相关数据，如果没有，就发送ARP广播（包含待查询的IP地址，收到广播的主机检查自己的IP，符合条件的主机将含有自己MAC地址的ARP包发送给ARP广播的主机）请求，等待ARP回应； 7. 得到ARP回应后，将IP地址与路由的下一跳MAC地址对应的信息写入ARP缓存表； 8. 写入缓存后，以路由下一跳的地址填充目的MAC地址，以数据帧形式转发； 9. 转发可能进行多次； 10. DNS请求到达DNS服务器的数据链路层协议单元； 11. DNS服务器的数据链路层协议单元解析数据帧，将内部的IP数据包传递给网络层IP协议单元； 12. DNS服务器的IP协议单元解析IP数据包，将内部的UDP数据报传递给传输层UDP协议单元； 13. DNS服务器的UDP协议单元解析收到的UDP数据报，将内部的DNS报文传递给DNS服务单元； 14. DNS服务单元将域名解析成对应IP地址，产生DNS回应报文； 15. DNS回应报文-&gt;UDP-&gt;IP-&gt;MAC-&gt;我的主机； 16. 我的主机收到数据帧，将数据帧-&gt;IP-&gt;UDP-&gt;浏览器； 17. 将域名解析结果以域名和IP地址对应的形式写入DNS缓存表。</p>
+<h1 id="与目的主机进行-TCP-连接（三次握手）"><a href="#与目的主机进行-TCP-连接（三次握手）" class="headerlink" title="与目的主机进行 TCP 连接（三次握手）"></a>与目的主机进行 TCP 连接（三次握手）</h1><ol>
+<li>向目的主机发送TCP连接请求报文；</li>
+<li>该TCP报文中SYN标志位设为1，表示连接请求；</li>
+<li>该TCP报文通过IP（DNS）-&gt;MAC（ARP）-&gt;网关-&gt;目的主机；</li>
+<li>目的主机收到数据帧，通过IP-&gt;TCP，TCP协议单元回应请求应答报文；</li>
+<li>该报文中SYN和ACK标志设为1，表示连接请求应答；</li>
+<li>该TCP报文通过IP（DNS）-&gt;MAC（ARP）-&gt;网关-&gt;我的主机；</li>
+<li>我的主机收到数据帧，通过IP-&gt;TCP，TCP协议单元回应请求确认报文；</li>
+<li>该TCP报文通过IP（DNS）-&gt;MAC（ARP）-&gt;网关-&gt;目的主机；</li>
+<li>目的主机收到数据帧，通过IP-&gt;TCP，连接建立完成。</li>
+</ol>
+<h1 id="发送与收取数据（浏览器与谜底主机开始-HTTP-访问过程）"><a href="#发送与收取数据（浏览器与谜底主机开始-HTTP-访问过程）" class="headerlink" title="发送与收取数据（浏览器与谜底主机开始 HTTP 访问过程）"></a>发送与收取数据（浏览器与谜底主机开始 HTTP 访问过程）</h1><p>1只有建立连接后才能开始传输数据。</p>
+<ol>
+<li>浏览器向域名发出GET方法报文（HTTP请求）；</li>
+<li>该GET方法报文通过TCP-&gt;IP（DNS）-&gt;MAC（ARP）-&gt;网关-&gt;目的主机；</li>
+<li>目的主机收到数据帧，通过IP-&gt;TCP-&gt;HTTP，HTTP协议单元会回应HTTP协议格式封装好的HTML形式数据（HTTP响应）；</li>
+<li>该HTML数据通过TCP-&gt;IP（DNS）-&gt;MAC（ARP）-&gt;网关-&gt;我的主机；</li>
+<li>我的主机收到数据帧，通过IP-&gt;TCP-&gt;HTTP-&gt;浏览器，浏览器以网页形式显示HTML内容。</li>
+</ol>
+<h1 id="与目的主机断开-TCP-连接（四次挥手）"><a href="#与目的主机断开-TCP-连接（四次挥手）" class="headerlink" title="与目的主机断开 TCP 连接（四次挥手）"></a>与目的主机断开 TCP 连接（四次挥手）</h1><p>TCP连接释放过程：</p>
+<ol>
+<li>浏览器向目的主机发出TCP连接结束请求报文，此时进入FIN WAIT状态；</li>
+<li>该报文FIN标志位设为1，表示结束请求；</li>
+<li>TCP结束请求报文通过IP（DNS）-&gt;MAC（ARP）-&gt;网关-&gt;目的主机；</li>
+<li>目的主机收到数据帧，通过IP-&gt;TCP，TCP协议单元回应结束应答报文；</li>
+<li>当前只是进行回应，因为目的主机可能还有数据要传，并不急着断开连接；</li>
+<li>该报文中ACK标志位设为1，表示收到结束请求；</li>
+<li>目的数据发送完所有数据后，向我的主机发出TCP连接结束请求报文；</li>
+<li>该报文FIN标志位设为1，表示结束请求；</li>
+<li>TCP结束请求报文通过IP（DNS）-&gt;MAC（ARP）-&gt;网关-&gt;我的主机；</li>
+<li>我的主机收到数据帧，通过IP-&gt;TCP，TCP协议单元回应结束应答报文，此时进入TIME WAIT状态，因为不相信网络是可靠的，如果目的主机没收到还可以重发；</li>
+<li>该报文中的FIN标志位均设为1，表示结束应答；</li>
+<li>该TCP回应报文通过IP（DNS）-&gt;MAC（ARP）-&gt;网关-&gt;目的主机；</li>
+<li>目的主机关闭连接；</li>
+<li>TIME WAIT等待结束后，没有收到回复，说明目的正常关闭了，我的主机也关闭连接。</li>
+</ol>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>URL访问网站时的网络传输全过程，可以归纳为： 首先通过域名找到IP，如果缓存里没有就要请求DNS服务器；得到IP后开始与目的主机进行三次握手来建立TCP连接；连接建立后进行HTTP访问，传输并获取网页内容；传输完后与目的主机四次挥手来断开TCP连接。 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/06/17/8nhabEuVyXkrN5m.jpg"><img src="https://i.loli.net/2020/06/17/8nhabEuVyXkrN5m.jpg"></a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag"><i class="fa fa-tag"></i> 运维</a>
+              <a href="/tags/DNS/" rel="tag"><i class="fa fa-tag"></i> DNS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/27/%E4%B8%8B%E5%8D%8A%E5%B9%B4%E8%AE%A1%E5%88%92/" rel="prev" title="下半年计划">
+      <i class="fa fa-chevron-left"></i> 下半年计划
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/15/dnsmasq%E8%AF%A6%E8%A7%A3/" rel="next" title="记一次Dnsmasq使用">
+      记一次Dnsmasq使用 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A6%82%E6%8B%AC"><span class="nav-number">1.</span> <span class="nav-text">概括</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9F%9F%E5%90%8D%E8%A7%A3%E6%9E%90%E6%88%90-IP-%E5%9C%B0%E5%9D%80"><span class="nav-number">2.</span> <span class="nav-text">域名解析成 IP 地址</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%8E%E7%9B%AE%E7%9A%84%E4%B8%BB%E6%9C%BA%E8%BF%9B%E8%A1%8C-TCP-%E8%BF%9E%E6%8E%A5%EF%BC%88%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">与目的主机进行 TCP 连接（三次握手）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%91%E9%80%81%E4%B8%8E%E6%94%B6%E5%8F%96%E6%95%B0%E6%8D%AE%EF%BC%88%E6%B5%8F%E8%A7%88%E5%99%A8%E4%B8%8E%E8%B0%9C%E5%BA%95%E4%B8%BB%E6%9C%BA%E5%BC%80%E5%A7%8B-HTTP-%E8%AE%BF%E9%97%AE%E8%BF%87%E7%A8%8B%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">发送与收取数据（浏览器与谜底主机开始 HTTP 访问过程）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%8E%E7%9B%AE%E7%9A%84%E4%B8%BB%E6%9C%BA%E6%96%AD%E5%BC%80-TCP-%E8%BF%9E%E6%8E%A5%EF%BC%88%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">与目的主机断开 TCP 连接（四次挥手）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Sven</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">91</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/sven0219" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;sven0219" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hi@svenshen.com" title="E-Mail → mailto:hi@svenshen.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="visitors-count">
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_uv">
+       Visitors :<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_pv">
+       Views : <span id="busuanzi_value_site_pv"></span>
+    </span>
+</div>
+
+<div class="copyright">
+  
+  &copy; 2022 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sven</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">276k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'ffcb8e4e993246f4af3c',
+      clientSecret: '83d999522d8c8f95f55bff4c2040b92858084127',
+      repo        : 'sven0219.github.io',
+      owner       : 'sven0219',
+      admin       : ['sven0219'],
+      id          : 'e5481107455987de412803bf92187bc7',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

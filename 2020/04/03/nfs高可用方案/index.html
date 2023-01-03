@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.52ynn.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":true,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="NFS 高可用方案（NFS+keepalived+Sersync）1. 简述1.1 介绍本方案 NFS 的高可用方案，应用服务器为 Client ，两台文件服务器分别Master和 Slave，使用 keepalived 生成一个虚拟 IP，使用 Sersync 进行 Master 与 Slave 之间文件相互同步，确保高可用。 1.2 网络拓扑图当 Master NFS 服务正常时  当 Mas">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NFS高可用方案">
+<meta property="og:url" content="https://blog.52ynn.top/2020/04/03/nfs%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88/index.html">
+<meta property="og:site_name" content="Sven&#39;s Blog">
+<meta property="og:description" content="NFS 高可用方案（NFS+keepalived+Sersync）1. 简述1.1 介绍本方案 NFS 的高可用方案，应用服务器为 Client ，两台文件服务器分别Master和 Slave，使用 keepalived 生成一个虚拟 IP，使用 Sersync 进行 Master 与 Slave 之间文件相互同步，确保高可用。 1.2 网络拓扑图当 Master NFS 服务正常时  当 Mas">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://i.loli.net/2020/06/17/CyFrMB2T7WuVk6S.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/06/17/hZY89BAksxK4WN2.jpg">
+<meta property="article:published_time" content="2020-04-03T19:58:36.000Z">
+<meta property="article:modified_time" content="2023-01-03T04:48:39.634Z">
+<meta property="article:author" content="Sven">
+<meta property="article:tag" content="运维">
+<meta property="article:tag" content="教程">
+<meta property="article:tag" content="NFS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/06/17/CyFrMB2T7WuVk6S.jpg">
+
+<link rel="canonical" href="https://blog.52ynn.top/2020/04/03/nfs%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>NFS高可用方案 | Sven's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Sven's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Do more ,say less !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://blog.52ynn.top/2020/04/03/nfs%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Sven">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sven's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NFS高可用方案
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-04-03 19:58:36" itemprop="dateCreated datePublished" datetime="2020-04-03T19:58:36+00:00">2020-04-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-01-03 04:48:39" itemprop="dateModified" datetime="2023-01-03T04:48:39+00:00">2023-01-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/skills/" itemprop="url" rel="index"><span itemprop="name">skills</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>8.9k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>8 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="NFS-高可用方案（NFS-keepalived-Sersync）"><a href="#NFS-高可用方案（NFS-keepalived-Sersync）" class="headerlink" title="NFS 高可用方案（NFS+keepalived+Sersync）"></a>NFS 高可用方案（NFS+keepalived+Sersync）</h1><h2 id="1-简述"><a href="#1-简述" class="headerlink" title="1. 简述"></a>1. 简述</h2><h3 id="1-1-介绍"><a href="#1-1-介绍" class="headerlink" title="1.1 介绍"></a>1.1 介绍</h3><p>本方案 NFS 的高可用方案，应用服务器为 Client ，两台文件服务器分别Master和 Slave，使用 keepalived 生成一个虚拟 IP，使用 Sersync 进行 Master 与 Slave 之间文件相互同步，确保高可用。</p>
+<h3 id="1-2-网络拓扑图"><a href="#1-2-网络拓扑图" class="headerlink" title="1.2 网络拓扑图"></a>1.2 网络拓扑图</h3><p>当 Master NFS 服务正常时 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/06/17/CyFrMB2T7WuVk6S.jpg"><img src="https://i.loli.net/2020/06/17/CyFrMB2T7WuVk6S.jpg"></a> 当 Master NFS 服务宕机时 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/06/17/hZY89BAksxK4WN2.jpg"><img src="https://i.loli.net/2020/06/17/hZY89BAksxK4WN2.jpg"></a></p>
+<span id="more"></span>
+<h2 id="2-安装前准备"><a href="#2-安装前准备" class="headerlink" title="2.安装前准备"></a>2.安装前准备</h2><p>服务器信息：</p>
+<p>角色</p>
+<p>系统版本</p>
+<p>ip</p>
+<p>虚拟 ip（Vip）</p>
+<p>无</p>
+<p>192.168.50.143</p>
+<p>Client</p>
+<p>centos 7.5</p>
+<p>192.168.51.246</p>
+<p>Master</p>
+<p>centos 7.5</p>
+<p>192.168.50.8</p>
+<p>Slave</p>
+<p>centos 7.5</p>
+<p>192.168.50.71</p>
+<p>服务器环境准备： 在 Master 和 Slave 上创建共享目录</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> /data</span><br></pre></td></tr></table></figure>
+
+<p>在 Client 上创建挂载目录</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> /qiyuesuodata</span><br></pre></td></tr></table></figure>
+
+<p>关闭 Client 、Master 和 Slave 服务器上的防火墙</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 关闭防火墙</span></span><br><span class="line">systemctl stop firewalld</span><br><span class="line"><span class="comment"># 关闭开机自启</span></span><br><span class="line">systemctl <span class="built_in">disable</span> firewalld</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-安装-NFS-并配置"><a href="#3-安装-NFS-并配置" class="headerlink" title="3. 安装 NFS 并配置"></a>3. 安装 NFS 并配置</h2><p>在 Client 、Master 和 Slave 服务器上安装 NFS 服务</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum -y install nfs-utils rpcbind</span><br></pre></td></tr></table></figure>
+
+<p><strong>配置 NFS 共享目录</strong> 在 Master 上执行</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 其中/data 为共享的目录，192.168.51.246 为 Client ip，如有多个私有云服务集群可用空格分隔</span></span><br><span class="line"><span class="comment"># 如 echo &#x27;/data 192.168.51.246(rw,sync,all_squash) 192.168.51.247(rw,sync,all_squash)&#x27; &gt;&gt; /etc/exports</span></span><br><span class="line"> <span class="built_in">echo</span> <span class="string">&#x27;/data 192.168.51.246(rw,sync,all_squash)&#x27;</span> &gt;&gt; /etc/exports</span><br><span class="line"><span class="comment"># 开启服务</span></span><br><span class="line"> systemctl start rpcbind &amp;&amp; systemctl start nfs</span><br><span class="line"><span class="comment"># 设置开机自启</span></span><br><span class="line"> systemctl <span class="built_in">enable</span> rpcbind &amp;&amp; systemctl <span class="built_in">enable</span> nfs</span><br><span class="line"><span class="comment"># 出现：Created symlink from /etc/systemd/system/multi-user.target.wants/nfs-server.service to /usr/lib/systemd/system/nfs-server.service.即成功</span></span><br></pre></td></tr></table></figure>
+
+<p>在 Slave 上执行</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 其中/data 为共享的目录，192.168.51.246 为 Client ip，如有多个私有云服务集群可用空格分隔</span></span><br><span class="line"><span class="comment"># 如 echo &#x27;/data 192.168.51.246(rw,sync,all_squash) 192.168.51.247(rw,sync,all_squash)&#x27; &gt;&gt; /etc/exports</span></span><br><span class="line"> <span class="built_in">echo</span> <span class="string">&#x27;/data 192.168.51.246(rw,sync,all_squash)&#x27;</span> &gt;&gt; /etc/exports</span><br><span class="line"><span class="comment"># 开启服务</span></span><br><span class="line"> systemctl start rpcbind &amp;&amp; systemctl start nfs</span><br><span class="line"><span class="comment"># 设置开机自启</span></span><br><span class="line"> systemctl <span class="built_in">enable</span> rpcbind &amp;&amp; systemctl <span class="built_in">enable</span> nfs</span><br><span class="line"><span class="comment"># # 出现：Created symlink from /etc/systemd/system/multi-user.target.wants/nfs-server.service to /usr/lib/systemd/system/nfs-server.service.即成功</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>测试挂载是否成功</strong> 在 Client 上执行挂载测试</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 测试 Master </span></span><br><span class="line"><span class="comment"># 其中 ip 为 Master 的 ip，/data为 Master 共享的目录，/qiyuesuodata 为需要挂载至 Client 的目录</span></span><br><span class="line"> mount -t nfs 192.168.50.8:/data /qiyuesuodata</span><br><span class="line"><span class="comment"># 检查 </span></span><br><span class="line"><span class="built_in">df</span> -Th </span><br><span class="line"><span class="comment"># 出现  192.168.50.8:/data      nfs4       29G  7.6G   22G  27% /qiyuesuodata 即为成功</span></span><br><span class="line"><span class="comment"># 去除挂载</span></span><br><span class="line">umount /qiyuesuodata</span><br><span class="line"></span><br><span class="line"><span class="comment"># 测试 Slave</span></span><br><span class="line"><span class="comment"># 其中 ip 为 Master 的 ip，/data为 Master 共享的目录，/qiyuesuodata 为需要挂载至 Client 的目录</span></span><br><span class="line"> mount -t nfs 192.168.50.71:/data /qiyuesuodata</span><br><span class="line"><span class="comment"># 检查 </span></span><br><span class="line"><span class="built_in">df</span> -Th </span><br><span class="line"><span class="comment"># 出现  192.168.50.71:/data      nfs4       29G  7.6G   22G  27% /qiyuesuodata 即为成功</span></span><br><span class="line"><span class="comment"># 去除挂载</span></span><br><span class="line">umount /qiyuesuodata</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="4-配置文件同步"><a href="#4-配置文件同步" class="headerlink" title="4. 配置文件同步"></a>4. 配置文件同步</h2><h4 id="在-Slave-进行同步-Master-数据"><a href="#在-Slave-进行同步-Master-数据" class="headerlink" title="在 Slave 进行同步 Master 数据"></a>在 Slave 进行同步 Master 数据</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 安装 rsync</span></span><br><span class="line">yum -y install rsync.x86_64</span><br><span class="line"><span class="comment"># 修改 /etc/rsyncd.conf 如下,其中 hosts allow 填写 master ip</span></span><br><span class="line">uid = nfsnobody</span><br><span class="line">gid = nfsnobody</span><br><span class="line">port = 873</span><br><span class="line">pid file = /var/rsyncd.pid</span><br><span class="line"><span class="built_in">log</span> file = /var/log/rsyncd.log</span><br><span class="line">use <span class="built_in">chroot</span> = no</span><br><span class="line">max connections = 200</span><br><span class="line"><span class="built_in">read</span> only = <span class="literal">false</span></span><br><span class="line">list = <span class="literal">false</span></span><br><span class="line">fake super = <span class="built_in">yes</span></span><br><span class="line">ignore errors</span><br><span class="line">[data]</span><br><span class="line">path = /data</span><br><span class="line">auth <span class="built_in">users</span> = qiyuesuo</span><br><span class="line">secrets file = /etc/rsync_salve.pass</span><br><span class="line">hosts allow = 192.168.50.8</span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成认证文件</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;qiyuesuo:qiyuesuo123&#x27;</span> &gt; /etc/rsync_salve.pass</span><br><span class="line"><span class="built_in">chmod</span> 600 /etc/rsync_salve.pass</span><br><span class="line"><span class="comment"># 修改 文件夹权限</span></span><br><span class="line"><span class="built_in">chown</span> -R nfsnobody:nfsnobody /data/</span><br><span class="line"><span class="comment"># 启动服务</span></span><br><span class="line"> rsync --daemon --config=/etc/rsyncd.conf </span><br></pre></td></tr></table></figure>
+
+<p>在 Master 上测试</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">yum -y install rsync.x86_64</span><br><span class="line"><span class="built_in">chown</span> -R nfsnobody:nfsnobody /data/</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;qiyuesuo123&quot;</span> &gt; /etc/rsync.pass</span><br><span class="line"><span class="built_in">chmod</span> 600 /etc/rsync.pass</span><br><span class="line"><span class="comment">#创建测试文件,测试推送</span></span><br><span class="line"><span class="built_in">cd</span> /data/</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;This is test file&quot;</span> &gt; file.txt</span><br><span class="line">rsync -arv /data/ qiyuesuo@192.168.50.71::data --password-file=/etc/rsync.pass</span><br><span class="line"><span class="comment">#在 slave 上测试</span></span><br><span class="line"><span class="built_in">ls</span> /data </span><br><span class="line"><span class="comment"># 出现 file.txt 即可</span></span><br></pre></td></tr></table></figure>
+
+<p>在 Master 上配置自动同步</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"> <span class="built_in">cd</span> /usr/local/</span><br><span class="line"> wget https://dl.qiyuesuo.com/private/nfs/sersync2.5.4_64bit_binary_stable_final.tar.gz</span><br><span class="line"> tar xvf sersync2.5.4_64bit_binary_stable_final.tar.gz</span><br><span class="line"> <span class="built_in">mv</span> GNU-Linux-x86/ sersync</span><br><span class="line"> <span class="built_in">cd</span> sersync/</span><br><span class="line"> <span class="comment"># 修改配置文件</span></span><br><span class="line">sed -ri <span class="string">&#x27;s#&lt;delete start=&quot;true&quot;/&gt;#&lt;delete start=&quot;false&quot;/&gt;#g&#x27;</span> confxml.xml</span><br><span class="line">sed -ri <span class="string">&#x27;24s#&lt;localpath watch=&quot;/opt/tongbu&quot;&gt;#&lt;localpath watch=&quot;/data&quot;&gt;#g&#x27;</span> confxml.xml</span><br><span class="line">sed -ri <span class="string">&#x27;25s#&lt;remote ip=&quot;127.0.0.1&quot; name=&quot;tongbu1&quot;/&gt;#&lt;remote ip=&quot;192.168.50.71&quot; name=&quot;data&quot;/&gt;#g&#x27;</span> confxml.xml</span><br><span class="line">sed -ri <span class="string">&#x27;30s#&lt;commonParams params=&quot;-artuz&quot;/&gt;#&lt;commonParams params=&quot;-az&quot;/&gt;#g&#x27;</span> confxml.xml</span><br><span class="line">sed -ri <span class="string">&#x27;31s#&lt;auth start=&quot;false&quot; users=&quot;root&quot; passwordfile=&quot;/etc/rsync.pas&quot;/&gt;#&lt;auth start=&quot;true&quot; users=&quot;qiyuesuo&quot; passwordfile=&quot;/etc/rsync.pass&quot;/&gt;#g&#x27;</span> confxml.xml</span><br><span class="line">sed -ri <span class="string">&#x27;33s#&lt;timeout start=&quot;false&quot; time=&quot;100&quot;/&gt;&lt;!-- timeout=100 --&gt;#&lt;timeout start=&quot;true&quot; time=&quot;100&quot;/&gt;&lt;!-- timeout=100 --&gt;#g&#x27;</span> confxml.xml</span><br><span class="line"><span class="comment">#启动Sersync</span></span><br><span class="line">/usr/local/sersync/sersync2 -dro /usr/local/sersync/confxml.xml</span><br></pre></td></tr></table></figure>
+
+<p>测试</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在 master 中的/data 目录创建文件</span></span><br><span class="line"><span class="built_in">touch</span> <span class="built_in">test</span></span><br><span class="line"><span class="comment"># 查看 salve 中的 /data 是否有该文件</span></span><br></pre></td></tr></table></figure>
+
+<p>以上就做完了 salve 同步 master 的文件，但是当 master 宕机后恢复，master 无法同步 salve 文件，所以要配置 master 同步 salve 文件</p>
+<h4 id="在-Master-进行同步-slave-数据"><a href="#在-Master-进行同步-slave-数据" class="headerlink" title="在 Master 进行同步 slave 数据"></a>在 Master 进行同步 slave 数据</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 修改 /etc/rsyncd.conf 如下,其中 hosts allow 填写 slave ip</span></span><br><span class="line">uid = nfsnobody</span><br><span class="line">gid = nfsnobody</span><br><span class="line">port = 873</span><br><span class="line">pid file = /var/rsyncd.pid</span><br><span class="line"><span class="built_in">log</span> file = /var/log/rsyncd.log</span><br><span class="line">use <span class="built_in">chroot</span> = no</span><br><span class="line">max connections = 200</span><br><span class="line"><span class="built_in">read</span> only = <span class="literal">false</span></span><br><span class="line">list = <span class="literal">false</span></span><br><span class="line">fake super = <span class="built_in">yes</span></span><br><span class="line">ignore errors</span><br><span class="line">[data]</span><br><span class="line">path = /data</span><br><span class="line">auth <span class="built_in">users</span> = qiyuesuo</span><br><span class="line">secrets file = /etc/rsync_master.pass</span><br><span class="line">hosts allow = 192.168.50.71</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成认证文件</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;qiyuesuo:qiyuesuo123&#x27;</span> &gt; /etc/rsync_master.pass</span><br><span class="line"><span class="built_in">chmod</span> 600 /etc/rsync_master.pass</span><br><span class="line"><span class="comment"># 修改 文件夹权限</span></span><br><span class="line"><span class="built_in">chown</span> -R nfsnobody:nfsnobody /data/</span><br><span class="line"><span class="comment"># 启动服务</span></span><br><span class="line"> rsync --daemon --config=/etc/rsyncd.conf </span><br></pre></td></tr></table></figure>
+
+<p>在 Slave 上测试</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chown</span> -R nfsnobody:nfsnobody /data/</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;qiyuesuo123&quot;</span> &gt; /etc/rsync.pass</span><br><span class="line"><span class="built_in">chmod</span> 600 /etc/rsync.pass</span><br><span class="line"><span class="comment">#创建测试文件,测试推送</span></span><br><span class="line"><span class="built_in">cd</span> /data/</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;This is test file&quot;</span> &gt; file.2.txt</span><br><span class="line">rsync -arv /data/ qiyuesuo@192.168.50.8::data --password-file=/etc/rsync.pass</span><br><span class="line"><span class="comment">#在 slave 上测试</span></span><br><span class="line"><span class="built_in">ls</span> /data </span><br><span class="line"><span class="comment"># 出现 file.2.txt 即可</span></span><br></pre></td></tr></table></figure>
+
+<p>在 Slave 上配置自动同步</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"> <span class="built_in">cd</span> /usr/local/</span><br><span class="line"> wget https://dl.qiyuesuo.com/private/nfs/sersync2.5.4_64bit_binary_stable_final.tar.gz</span><br><span class="line"> tar xvf sersync2.5.4_64bit_binary_stable_final.tar.gz</span><br><span class="line"> <span class="built_in">mv</span> GNU-Linux-x86/ sersync</span><br><span class="line"> <span class="built_in">cd</span> sersync/</span><br><span class="line"> <span class="comment"># 修改配置文件</span></span><br><span class="line">sed -ri <span class="string">&#x27;s#&lt;delete start=&quot;true&quot;/&gt;#&lt;delete start=&quot;false&quot;/&gt;#g&#x27;</span> confxml.xml</span><br><span class="line">sed -ri <span class="string">&#x27;24s#&lt;localpath watch=&quot;/opt/tongbu&quot;&gt;#&lt;localpath watch=&quot;/data&quot;&gt;#g&#x27;</span> confxml.xml</span><br><span class="line">sed -ri <span class="string">&#x27;25s#&lt;remote ip=&quot;127.0.0.1&quot; name=&quot;tongbu1&quot;/&gt;#&lt;remote ip=&quot;192.168.50.8&quot; name=&quot;data&quot;/&gt;#g&#x27;</span> confxml.xml</span><br><span class="line">sed -ri <span class="string">&#x27;30s#&lt;commonParams params=&quot;-artuz&quot;/&gt;#&lt;commonParams params=&quot;-az&quot;/&gt;#g&#x27;</span> confxml.xml</span><br><span class="line">sed -ri <span class="string">&#x27;31s#&lt;auth start=&quot;false&quot; users=&quot;root&quot; passwordfile=&quot;/etc/rsync.pas&quot;/&gt;#&lt;auth start=&quot;true&quot; users=&quot;qiyuesuo&quot; passwordfile=&quot;/etc/rsync.pass&quot;/&gt;#g&#x27;</span> confxml.xml</span><br><span class="line">sed -ri <span class="string">&#x27;33s#&lt;timeout start=&quot;false&quot; time=&quot;100&quot;/&gt;&lt;!-- timeout=100 --&gt;#&lt;timeout start=&quot;true&quot; time=&quot;100&quot;/&gt;&lt;!-- timeout=100 --&gt;#g&#x27;</span> confxml.xml</span><br><span class="line"><span class="comment">#启动Sersync</span></span><br><span class="line">/usr/local/sersync/sersync2 -dro /usr/local/sersync/confxml.xml</span><br></pre></td></tr></table></figure>
+
+<p>至此我们已经做好了主从相互同步的操作 ##5. 安装 Keepalived 在 Master 上执行</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">yum -y install keepalived.x86_64</span><br><span class="line"><span class="comment"># 修改 /etc/keepalived/keepalived.conf</span></span><br><span class="line"><span class="comment"># 其中 enp0s3 为绑定网卡名称，可以使用 ip addr 命令查看</span></span><br><span class="line"><span class="comment"># 其中 192.168.50.143  为虚拟 ip ，注意不要和其它 ip 冲突</span></span><br><span class="line">! Configuration File <span class="keyword">for</span> keepalived</span><br><span class="line"></span><br><span class="line">global_defs &#123;</span><br><span class="line">   router_id NFS-Master</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">    state MASTER</span><br><span class="line">    interface enp0s3</span><br><span class="line">    virtual_router_id 51</span><br><span class="line">    priority 150</span><br><span class="line">    advert_int 1</span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS</span><br><span class="line">        auth_pass qiyuesuo123</span><br><span class="line">    &#125;</span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        192.168.50.143  </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment"># 启动服务</span></span><br><span class="line">systemctl start  keepalived.service &amp;&amp; systemctl <span class="built_in">enable</span> keepalived.service</span><br></pre></td></tr></table></figure>
+
+<p>在 Slave 上执行</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">yum -y install keepalived.x86_64</span><br><span class="line"><span class="comment"># 修改 /etc/keepalived/keepalived.conf</span></span><br><span class="line"><span class="comment"># 其中 enp0s3 为绑定网卡名称，可以使用 ip addr 命令查看</span></span><br><span class="line"><span class="comment"># 其中 192.168.50.143  为虚拟 ip ，注意不要和其它 ip 冲突</span></span><br><span class="line">! Configuration File <span class="keyword">for</span> keepalived</span><br><span class="line"></span><br><span class="line">global_defs &#123;</span><br><span class="line">   router_id NFS-Slave</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">    state MASTER</span><br><span class="line">    interface enp0s3</span><br><span class="line">    virtual_router_id 51</span><br><span class="line">    priority 100</span><br><span class="line">    advert_int 1</span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS</span><br><span class="line">        auth_pass qiyuesuo123</span><br><span class="line">    &#125;</span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        192.168.50.143  </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment"># 启动服务</span></span><br><span class="line">systemctl start  keepalived.service &amp;&amp; systemctl <span class="built_in">enable</span> keepalived.service</span><br></pre></td></tr></table></figure>
+
+<p><strong>查看虚拟IP是否存在</strong> 在 Master 上执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ip a  grep  192.168.50.143</span><br><span class="line"><span class="comment"># 出现</span></span><br><span class="line"><span class="comment"># inet 192.168.50.143/32 scope global enp0s3</span></span><br><span class="line"><span class="comment"># 即成功</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>VIP挂载测试</strong> 在 Client 上通过 vip 挂载测试</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mount -t nfs 192.168.50.143:/data /qiyuesuodata</span><br><span class="line"><span class="comment"># 如/qiyuesuodata目录中有共享目录中文件则说明挂载成功</span></span><br><span class="line">umount /qiyuesuodata/</span><br></pre></td></tr></table></figure>
+
+<p>模拟机器Down机,测试虚拟IP地址是否会漂移</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在 Master 上关闭 keepalived</span></span><br><span class="line">systemctl stop keepalived.service</span><br><span class="line"><span class="comment"># 执行ip a  grep  192.168.50.143会无输出则关闭成功</span></span><br><span class="line"><span class="comment"># 在 Slave 上查看</span></span><br><span class="line">ip a  grep  192.168.50.143</span><br><span class="line"><span class="comment"># 出现</span></span><br><span class="line"><span class="comment"># inet 192.168.50.143/32 scope global enp0s3</span></span><br><span class="line"><span class="comment"># 即成功</span></span><br></pre></td></tr></table></figure>
+
+<p>则说明 ip 漂移成功</p>
+<h2 id="设置-keepalived-脚本"><a href="#设置-keepalived-脚本" class="headerlink" title="设置 keepalived 脚本"></a>设置 keepalived 脚本</h2><p>因为 ip 的漂移是根据 keepalived 的存活来判断的，所以在 nfs 宕机之后需要手动停止 keepalived 服务来进行ip 的切换，这里在 Master 上编写一个定时任务来检测 nfs 服务是否宕机</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /usr/local/sbin</span><br><span class="line"><span class="comment"># 生成文件check_nfs.sh</span></span><br><span class="line"><span class="comment">#!/bin/sh</span></span><br><span class="line"><span class="comment"># 每秒执行一次</span></span><br><span class="line">step=1 <span class="comment">#间隔的秒数，不能大于60 </span></span><br><span class="line"><span class="keyword">for</span> (( i = <span class="number">0</span>; i &lt; <span class="number">60</span>; i=(i+step) )); <span class="keyword">do</span> </span><br><span class="line">  <span class="comment">###检查nfs可用性：进程和是否能够挂载</span></span><br><span class="line">  /sbin/service nfs status &amp;&gt;/dev/null</span><br><span class="line">  <span class="keyword">if</span> [ $? -ne 0 ];<span class="keyword">then</span></span><br><span class="line">    <span class="comment">###如果服务状态不正常，先尝试重启服务</span></span><br><span class="line">    /sbin/service nfs restart</span><br><span class="line">    /sbin/service nfs status &amp;&gt;/dev/null</span><br><span class="line">    <span class="keyword">if</span> [ $? -ne 0 ];<span class="keyword">then</span></span><br><span class="line">       <span class="comment"># 如服务仍不正常，停止 keepalived</span></span><br><span class="line">       systemctl stop keepalived.service</span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">  <span class="keyword">fi</span></span><br><span class="line">  <span class="built_in">sleep</span> <span class="variable">$step</span> </span><br><span class="line"><span class="keyword">done</span> </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>加入定时任务</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chmod</span> 777 /usr/local/sbin/check_nfs.sh</span><br><span class="line">crontab -e</span><br><span class="line"><span class="comment"># 输入定时任务</span></span><br><span class="line">* * * * *  /usr/local/sbin/check_nfs.sh &amp;&gt; /dev/null</span><br></pre></td></tr></table></figure>
+
+<p>在 Client 添加定时任务，当 Master 宕机时进行重新挂载</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /usr/local/sbin</span><br><span class="line"><span class="comment"># 生成文件check_mount.sh</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#!/bin/sh</span></span><br><span class="line"><span class="comment"># 每秒执行一次</span></span><br><span class="line">step=1 <span class="comment">#间隔的秒数，不能大于60 </span></span><br><span class="line"><span class="keyword">for</span> (( i = <span class="number">0</span>; i &lt; <span class="number">60</span>; i=(i+step) )); <span class="keyword">do</span> </span><br><span class="line">  mount=`<span class="built_in">df</span> -Thgrep qiyuesuodata`</span><br><span class="line">  <span class="keyword">if</span> [ <span class="variable">$mount</span> = <span class="string">&quot;&quot;</span> ];<span class="keyword">then</span></span><br><span class="line">     umount /qiyuesuodata</span><br><span class="line">     mount mount -t nfs 192.168.50.143:/data /qiyuesuodata</span><br><span class="line">  <span class="keyword">fi</span></span><br><span class="line">  <span class="built_in">sleep</span> <span class="variable">$step</span> </span><br><span class="line"><span class="keyword">done</span> </span><br></pre></td></tr></table></figure>
+
+<p>加入定时任务</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chmod</span> 777 /usr/local/sbin/check_mount.sh</span><br><span class="line">crontab -e</span><br><span class="line"><span class="comment"># 输入定时任务</span></span><br><span class="line">* * * * *  /usr/local/sbin/check_nfs.sh &amp;&gt; /dev/null</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag"><i class="fa fa-tag"></i> 运维</a>
+              <a href="/tags/%E6%95%99%E7%A8%8B/" rel="tag"><i class="fa fa-tag"></i> 教程</a>
+              <a href="/tags/NFS/" rel="tag"><i class="fa fa-tag"></i> NFS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/04/01/python-%E8%87%AA%E5%8A%A8%E5%8C%96%E8%BF%90%E7%BB%B4%EF%BC%8804%EF%BC%89/" rel="prev" title="Python 自动化运维（04）">
+      <i class="fa fa-chevron-left"></i> Python 自动化运维（04）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/04/07/rsync-%E6%96%87%E4%BB%B6%E5%AE%9A%E6%97%B6%E5%90%8C%E6%AD%A5/" rel="next" title="文件定时同步(Linux+windows)">
+      文件定时同步(Linux+windows) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#NFS-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88%EF%BC%88NFS-keepalived-Sersync%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">NFS 高可用方案（NFS+keepalived+Sersync）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E7%AE%80%E8%BF%B0"><span class="nav-number">1.1.</span> <span class="nav-text">1. 简述</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.1 介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E7%BD%91%E7%BB%9C%E6%8B%93%E6%89%91%E5%9B%BE"><span class="nav-number">1.1.2.</span> <span class="nav-text">1.2 网络拓扑图</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%AE%89%E8%A3%85%E5%89%8D%E5%87%86%E5%A4%87"><span class="nav-number">1.2.</span> <span class="nav-text">2.安装前准备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AE%89%E8%A3%85-NFS-%E5%B9%B6%E9%85%8D%E7%BD%AE"><span class="nav-number">1.3.</span> <span class="nav-text">3. 安装 NFS 并配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5"><span class="nav-number">1.4.</span> <span class="nav-text">4. 配置文件同步</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9C%A8-Slave-%E8%BF%9B%E8%A1%8C%E5%90%8C%E6%AD%A5-Master-%E6%95%B0%E6%8D%AE"><span class="nav-number">1.4.0.1.</span> <span class="nav-text">在 Slave 进行同步 Master 数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9C%A8-Master-%E8%BF%9B%E8%A1%8C%E5%90%8C%E6%AD%A5-slave-%E6%95%B0%E6%8D%AE"><span class="nav-number">1.4.0.2.</span> <span class="nav-text">在 Master 进行同步 slave 数据</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE-keepalived-%E8%84%9A%E6%9C%AC"><span class="nav-number">1.5.</span> <span class="nav-text">设置 keepalived 脚本</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Sven</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">91</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/sven0219" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;sven0219" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hi@svenshen.com" title="E-Mail → mailto:hi@svenshen.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="visitors-count">
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_uv">
+       Visitors :<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_pv">
+       Views : <span id="busuanzi_value_site_pv"></span>
+    </span>
+</div>
+
+<div class="copyright">
+  
+  &copy; 2022 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sven</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">276k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'ffcb8e4e993246f4af3c',
+      clientSecret: '83d999522d8c8f95f55bff4c2040b92858084127',
+      repo        : 'sven0219.github.io',
+      owner       : 'sven0219',
+      admin       : ['sven0219'],
+      id          : '8ea54d2dbce5fb49eaefbcdc3ee22d8b',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

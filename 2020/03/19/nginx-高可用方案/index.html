@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.52ynn.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":true,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="介绍什么是高可用高可用HA（High Availability）是分布式系统架构设计中必须考虑的因素之一，它通常是指，通过设计减少系统不能提供服务的时间。如果一个系统能够一直提供服务，那么这个可用性则是百分之百，但是天有不测风云。所以我们只能尽可能的去减少服务的故障。 解决什么问题在生产环境上很多时候是以Nginx做反向代理对外提供服务，但是一天Nginx难免遇见故障，如：服务器宕机。当Nginx">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nginx 高可用方案">
+<meta property="og:url" content="https://blog.52ynn.top/2020/03/19/nginx-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88/index.html">
+<meta property="og:site_name" content="Sven&#39;s Blog">
+<meta property="og:description" content="介绍什么是高可用高可用HA（High Availability）是分布式系统架构设计中必须考虑的因素之一，它通常是指，通过设计减少系统不能提供服务的时间。如果一个系统能够一直提供服务，那么这个可用性则是百分之百，但是天有不测风云。所以我们只能尽可能的去减少服务的故障。 解决什么问题在生产环境上很多时候是以Nginx做反向代理对外提供服务，但是一天Nginx难免遇见故障，如：服务器宕机。当Nginx">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-03-19T12:12:26.000Z">
+<meta property="article:modified_time" content="2023-01-03T04:48:39.634Z">
+<meta property="article:author" content="Sven">
+<meta property="article:tag" content="运维">
+<meta property="article:tag" content="nginx">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.52ynn.top/2020/03/19/nginx-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Nginx 高可用方案 | Sven's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Sven's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Do more ,say less !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://blog.52ynn.top/2020/03/19/nginx-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Sven">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sven's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Nginx 高可用方案
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-03-19 12:12:26" itemprop="dateCreated datePublished" datetime="2020-03-19T12:12:26+00:00">2020-03-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-01-03 04:48:39" itemprop="dateModified" datetime="2023-01-03T04:48:39+00:00">2023-01-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/skills/" itemprop="url" rel="index"><span itemprop="name">skills</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.1k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><h3 id="什么是高可用"><a href="#什么是高可用" class="headerlink" title="什么是高可用"></a>什么是高可用</h3><p>高可用<code>HA（High Availability）</code>是分布式系统架构设计中必须考虑的因素之一，它通常是指，通过设计减少系统不能提供服务的时间。如果一个系统能够一直提供服务，那么这个可用性则是百分之百，但是天有不测风云。所以我们只能尽可能的去减少服务的故障。</p>
+<h3 id="解决什么问题"><a href="#解决什么问题" class="headerlink" title="解决什么问题"></a>解决什么问题</h3><p>在生产环境上很多时候是以<code>Nginx</code>做反向代理对外提供服务，但是一天<code>Nginx</code>难免遇见故障，如：服务器宕机。当<code>Nginx</code>宕机那么所有对外提供的接口都将导致无法访问。 虽然我们无法保证服务器百分之百可用，但是也得想办法避免这种悲剧，今天我们使用<code>keepalived</code>来实现<code>Nginx</code>的高可用。</p>
+<span id="more"></span>
+<h3 id="双机热备方案"><a href="#双机热备方案" class="headerlink" title="双机热备方案"></a>双机热备方案</h3><p>这种方案是国内企业中最为普遍的一种高可用方案，双机热备其实就是指一台服务器在提供服务，另一台为某服务的备用状态，当一台服务器不可用另外一台就会顶替上去。</p>
+<h4 id="keepalived是什么？"><a href="#keepalived是什么？" class="headerlink" title="keepalived是什么？"></a>keepalived是什么？</h4><p><code>Keepalived</code>软件起初是专为<code>LVS</code>负载均衡软件设计的，用来管理并监控LVS集群系统中各个服务节点的状态，后来又加入了可以实现高可用的<code>VRRP</code>(<code>Virtual Router Redundancy Protocol</code> ,虚拟路由器冗余协议）功能。因此，<code>Keepalived</code>除了能够管理<code>LVS</code>软件外，还可以作为其他服务（例如：<code>Nginx</code>、<code>Haproxy</code>、<code>MySQL</code>等）的高可用解决方案软件</p>
+<h4 id="故障转移机制"><a href="#故障转移机制" class="headerlink" title="故障转移机制"></a>故障转移机制</h4><p><code>Keepalived</code>高可用服务之间的故障切换转移，是通过<code>VRRP</code> 来实现的。 在 <code>Keepalived</code>服务正常工作时，主 <code>Master</code>节点会不断地向备节点发送（多播的方式）心跳消息，用以告诉备<code>Backup</code>节点自己还活着，当主 <code>Master</code>节点发生故障时，就无法发送心跳消息，备节点也就因此无法继续检测到来自主 <code>Master</code>节点的心跳了，于是调用自身的接管程序，接管主<code>Master</code>节点的 <code>IP</code>资源及服务。而当主 <code>Master</code>节点恢复时，备<code>Backup</code>节点又会释放主节点故障时自身接管的<code>IP</code>资源及服务，恢复到原来的备用角色。</p>
+<h1 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h1><p>机器都为 <code>Centos7</code> 操作系统 机器 1：<code>192.168.1.140</code>（主） 机器 2：<code>192.168.1.141</code>（从） 虚拟 ip：<code>192.168.1.150</code></p>
+<h1 id="安装-Nginx"><a href="#安装-Nginx" class="headerlink" title="安装 Nginx"></a>安装 Nginx</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 安装</span><br><span class="line">yum install nginx -y</span><br><span class="line"># 启动停止</span><br><span class="line">systemctl start nginx </span><br><span class="line">systemctl stop nginx </span><br></pre></td></tr></table></figure>
+
+<h1 id="安装-keepalived"><a href="#安装-keepalived" class="headerlink" title="安装 keepalived"></a>安装 keepalived</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum -y install keepalived</span><br></pre></td></tr></table></figure>
+
+<h1 id="配置高可用"><a href="#配置高可用" class="headerlink" title="配置高可用"></a>配置高可用</h1><h4 id="修改机器-1（192-168-1-140）配置文件"><a href="#修改机器-1（192-168-1-140）配置文件" class="headerlink" title="修改机器 1（192.168.1.140）配置文件"></a>修改机器 1（192.168.1.140）配置文件</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/keepalived/keepalived.conf</span><br></pre></td></tr></table></figure>
+
+<p><code>keepalived.conf</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">#检测脚本</span><br><span class="line">vrrp_script chk_http_port &#123;</span><br><span class="line">    script &quot;/usr/local/src/check_nginx_pid.sh&quot; #心跳执行的脚本，检测nginx是否启动</span><br><span class="line">    interval 2                          #（检测脚本执行的间隔，单位是秒）</span><br><span class="line">    weight 2                            #权重</span><br><span class="line">&#125;</span><br><span class="line">#vrrp 实例定义部分</span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">    state MASTER            # 指定keepalived的角色，MASTER为主，BACKUP为备</span><br><span class="line">    interface ens33         # 当前进行vrrp通讯的网络接口卡(当前centos的网卡) 用ifconfig查看你具体的网卡</span><br><span class="line">    virtual_router_id 66    # 虚拟路由编号，主从要一直</span><br><span class="line">    priority 100            # 优先级，数值越大，获取处理请求的优先级越高</span><br><span class="line">    advert_int 1            # 检查间隔，默认为1s(vrrp组播周期秒数)</span><br><span class="line">    #授权访问</span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS #设置验证类型和密码，MASTER和BACKUP必须使用相同的密码才能正常通信</span><br><span class="line">        auth_pass 1111</span><br><span class="line">    &#125;</span><br><span class="line">    track_script &#123;</span><br><span class="line">        chk_http_port            #（调用检测脚本）</span><br><span class="line">    &#125;</span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        192.168.1.150            # 定义虚拟ip(VIP)，可多设，每行一个</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="修改机器-2（192-168-1-141）配置文件"><a href="#修改机器-2（192-168-1-141）配置文件" class="headerlink" title="修改机器 2（192.168.1.141）配置文件"></a>修改机器 2（192.168.1.141）配置文件</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/keepalived/keepalived.conf</span><br></pre></td></tr></table></figure>
+
+<p><code>keepalived.conf</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">#检测脚本</span><br><span class="line">vrrp_script chk_http_port &#123;</span><br><span class="line">    script &quot;/usr/local/src/check_nginx_pid.sh&quot; #心跳执行的脚本，检测nginx是否启动</span><br><span class="line">    interval 2                          #（检测脚本执行的间隔）</span><br><span class="line">    weight 2                            #权重</span><br><span class="line">&#125;</span><br><span class="line">#vrrp 实例定义部分</span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">    state BACKUP                        # 指定keepalived的角色，MASTER为主，BACKUP为备</span><br><span class="line">    interface ens33                      # 当前进行vrrp通讯的网络接口卡(当前centos的网卡) 用ifconfig查看你具体的网卡</span><br><span class="line">    virtual_router_id 66                # 虚拟路由编号，主从要一直</span><br><span class="line">    priority 99                         # 优先级，数值越大，获取处理请求的优先级越高</span><br><span class="line">    advert_int 1                        # 检查间隔，默认为1s(vrrp组播周期秒数)</span><br><span class="line">    #授权访问</span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS #设置验证类型和密码，MASTER和BACKUP必须使用相同的密码才能正常通信</span><br><span class="line">        auth_pass 1111</span><br><span class="line">    &#125;</span><br><span class="line">    track_script &#123;</span><br><span class="line">        chk_http_port                   #（调用检测脚本）</span><br><span class="line">    &#125;</span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        192.168.16.130                   # 定义虚拟ip(VIP)，可多设，每行一个</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="添加检测脚本"><a href="#添加检测脚本" class="headerlink" title="添加检测脚本"></a>添加检测脚本</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /usr/local/src/check_nginx_pid.sh</span><br></pre></td></tr></table></figure>
+
+<p><code>check_nginx_pid.sh</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/bash</span><br><span class="line">#检测nginx是否启动了</span><br><span class="line">A=`ps -C nginx --no-header wc -l`        </span><br><span class="line">if [ $A -eq 0 ];then    #如果nginx没有启动就启动nginx                        </span><br><span class="line">      systemctl start nginx                #重启nginx</span><br><span class="line">      if [ `ps -C nginx --no-header wc -l` -eq 0 ];then    #nginx重启失败，则停掉keepalived服务，进行VIP转移</span><br><span class="line">              killall keepalived                    </span><br><span class="line">      fi</span><br><span class="line">fi</span><br></pre></td></tr></table></figure>
+
+<h4 id="脚本授权"><a href="#脚本授权" class="headerlink" title="脚本授权"></a>脚本授权</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># 赋予可执行权限</span><br><span class="line">chmod +x /usr/local/src/check_nginx_pid.sh</span><br></pre></td></tr></table></figure>
+
+<h4 id="模拟nginx故障："><a href="#模拟nginx故障：" class="headerlink" title="模拟nginx故障："></a>模拟nginx故障：</h4><p>修改两个服务器默认访问的Nginx的html页面作为区别。 首先访问192.168.1.150,通过vip进行访问，页面显示192.168.1.140；说明当前是主服务器提供的服务。 这个时候192.168.1.140主服务器执行命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop nginx; #停止nginx</span><br></pre></td></tr></table></figure>
+
+<p>再次访问vip(192.168.1.150)发现这个时候页面显示的还是：192.168.1.140，这是脚本里面自动重启。 现在直接将192.168.1.140服务器关闭，在此访问vip(192.168.1.150)现在发现页面显示192.168.1.141这个时候keepalived就自动故障转移了，一套企业级生产环境的高可用方案就搭建好了。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag"><i class="fa fa-tag"></i> 运维</a>
+              <a href="/tags/nginx/" rel="tag"><i class="fa fa-tag"></i> nginx</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/11/%E7%A7%91%E5%A4%A7%E8%AE%AF%E9%A3%9E%E9%9D%A2%E8%AF%95%E8%AE%B0%E5%BD%95/" rel="prev" title="科大讯飞面试记录">
+      <i class="fa fa-chevron-left"></i> 科大讯飞面试记录
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/20/%E8%BF%90%E7%BB%B4%E6%8F%90%E5%8D%87-kubernetes%EF%BC%8801%EF%BC%89/" rel="next" title="运维提升——Kubernetes（01）">
+      运维提升——Kubernetes（01） <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E9%AB%98%E5%8F%AF%E7%94%A8"><span class="nav-number">1.0.1.</span> <span class="nav-text">什么是高可用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98"><span class="nav-number">1.0.2.</span> <span class="nav-text">解决什么问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%8C%E6%9C%BA%E7%83%AD%E5%A4%87%E6%96%B9%E6%A1%88"><span class="nav-number">1.0.3.</span> <span class="nav-text">双机热备方案</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#keepalived%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">1.0.3.1.</span> <span class="nav-text">keepalived是什么？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%85%E9%9A%9C%E8%BD%AC%E7%A7%BB%E6%9C%BA%E5%88%B6"><span class="nav-number">1.0.3.2.</span> <span class="nav-text">故障转移机制</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%87%86%E5%A4%87"><span class="nav-number">2.</span> <span class="nav-text">准备</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-Nginx"><span class="nav-number">3.</span> <span class="nav-text">安装 Nginx</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-keepalived"><span class="nav-number">4.</span> <span class="nav-text">安装 keepalived</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E9%AB%98%E5%8F%AF%E7%94%A8"><span class="nav-number">5.</span> <span class="nav-text">配置高可用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E6%9C%BA%E5%99%A8-1%EF%BC%88192-168-1-140%EF%BC%89%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="nav-number">5.0.0.1.</span> <span class="nav-text">修改机器 1（192.168.1.140）配置文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E6%9C%BA%E5%99%A8-2%EF%BC%88192-168-1-141%EF%BC%89%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="nav-number">5.0.0.2.</span> <span class="nav-text">修改机器 2（192.168.1.141）配置文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0%E6%A3%80%E6%B5%8B%E8%84%9A%E6%9C%AC"><span class="nav-number">5.0.0.3.</span> <span class="nav-text">添加检测脚本</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%84%9A%E6%9C%AC%E6%8E%88%E6%9D%83"><span class="nav-number">5.0.0.4.</span> <span class="nav-text">脚本授权</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A8%A1%E6%8B%9Fnginx%E6%95%85%E9%9A%9C%EF%BC%9A"><span class="nav-number">5.0.0.5.</span> <span class="nav-text">模拟nginx故障：</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Sven</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">91</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/sven0219" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;sven0219" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hi@svenshen.com" title="E-Mail → mailto:hi@svenshen.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="visitors-count">
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_uv">
+       Visitors :<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_pv">
+       Views : <span id="busuanzi_value_site_pv"></span>
+    </span>
+</div>
+
+<div class="copyright">
+  
+  &copy; 2022 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sven</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">276k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'ffcb8e4e993246f4af3c',
+      clientSecret: '83d999522d8c8f95f55bff4c2040b92858084127',
+      repo        : 'sven0219.github.io',
+      owner       : 'sven0219',
+      admin       : ['sven0219'],
+      id          : '0d92677ecc13f6c9d85754793ebe8e28',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

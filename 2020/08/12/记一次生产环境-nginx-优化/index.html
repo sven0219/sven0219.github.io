@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.52ynn.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":true,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="nginx 优化由于业务场景需要，近期将生产环境由阿里云的 SLB 更换为自建 nginx，之前在测试环境使用了一段时间一直没有问题，但是上周上到生产后出现了一系列问题，因此对 nginx 做了一些优化，记录下以备以后需要。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记一次生产环境 nginx 优化">
+<meta property="og:url" content="https://blog.52ynn.top/2020/08/12/%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83-nginx-%E4%BC%98%E5%8C%96/index.html">
+<meta property="og:site_name" content="Sven&#39;s Blog">
+<meta property="og:description" content="nginx 优化由于业务场景需要，近期将生产环境由阿里云的 SLB 更换为自建 nginx，之前在测试环境使用了一段时间一直没有问题，但是上周上到生产后出现了一系列问题，因此对 nginx 做了一些优化，记录下以备以后需要。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-08-12T09:05:40.000Z">
+<meta property="article:modified_time" content="2023-01-03T04:48:39.638Z">
+<meta property="article:author" content="Sven">
+<meta property="article:tag" content="运维">
+<meta property="article:tag" content="记录">
+<meta property="article:tag" content="nginx">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.52ynn.top/2020/08/12/%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83-nginx-%E4%BC%98%E5%8C%96/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>记一次生产环境 nginx 优化 | Sven's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Sven's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Do more ,say less !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://blog.52ynn.top/2020/08/12/%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83-nginx-%E4%BC%98%E5%8C%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Sven">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sven's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          记一次生产环境 nginx 优化
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-08-12 09:05:40" itemprop="dateCreated datePublished" datetime="2020-08-12T09:05:40+00:00">2020-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-01-03 04:48:39" itemprop="dateModified" datetime="2023-01-03T04:48:39+00:00">2023-01-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/skills/" itemprop="url" rel="index"><span itemprop="name">skills</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>6.6k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>6 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="nginx-优化"><a href="#nginx-优化" class="headerlink" title="nginx 优化"></a>nginx 优化</h1><p>由于业务场景需要，近期将生产环境由阿里云的 SLB 更换为自建 nginx，之前在测试环境使用了一段时间一直没有问题，但是上周上到生产后出现了一系列问题，因此对 nginx 做了一些优化，记录下以备以后需要。</p>
+<span id="more"></span>
+<h2 id="高并发优化"><a href="#高并发优化" class="headerlink" title="高并发优化"></a>高并发优化</h2><p>生产环境相对于测试环境访问量多了很多，并发量大的时候会出现部分请求 502 的情况，因此对高并发进行了一点优化，主要分两方面，一方面是系统层面，一方面是 nginx 层面。</p>
+<h4 id="系统内核层面"><a href="#系统内核层面" class="headerlink" title="系统内核层面"></a>系统内核层面</h4><p>修改<code>/etc/sysctl.conf</code>内核参数。</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">fs.file-max</span> = <span class="string">999999</span></span><br><span class="line"><span class="attr">net.ipv4.tcp_tw_reuse</span> = <span class="string">1</span></span><br><span class="line"><span class="attr">net.ipv4.tcp_keepalive_time</span> = <span class="string">15</span></span><br><span class="line"><span class="attr">net.ipv4.tcp_fin_timeout</span> = <span class="string">15</span></span><br><span class="line"><span class="attr">net.ipv4.tcp_max_tw_buckets</span> = <span class="string">5000</span></span><br><span class="line"><span class="attr">net.core.netdev_max_backlog</span> = <span class="string">262144</span></span><br><span class="line"><span class="attr">net.ipv4.tcp_max_orphans</span> = <span class="string">262144</span></span><br><span class="line"><span class="attr">net.ipv4.tcp_tw_reuse</span> = <span class="string">1</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>使配置生效</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sysctl -p</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：</p>
+<ul>
+<li><p>fs.file-max：999999</p>
+<blockquote>
+<p>这个参数表示进程（比如一个worker进程）可以同时打开的最大句柄数，这 个参数直接限制最大并发连接数，需根据实际情况配置。</p>
+</blockquote>
+</li>
+<li><p>net.ipv4.tcp_tw_reuse：</p>
+<blockquote>
+<p>这个参数设置为1，表示允许将TIME-WAIT状态的socket重新用于新的 TCP连接，这对于服务器来说很有意义，因为服务器上总会有大量TIME-WAIT状态的连接。</p>
+</blockquote>
+</li>
+<li><p>net.ipv4.tcp_keepalive_time：</p>
+<blockquote>
+<p>这个参数表示当keepalive启用时，TCP发送keepalive消息的频度。 默认是2小时，若将其设置得小一些，可以更快地清理无效的连接。</p>
+</blockquote>
+</li>
+<li><p>net.ipv4.tcp_fin_timeout：</p>
+<blockquote>
+<p>这个参数表示当服务器主动关闭连接时，socket保持在FIN-WAIT-2状态的最大时间。</p>
+</blockquote>
+</li>
+<li><p>net.ipv4.tcp_max_tw_buckets：</p>
+<blockquote>
+<p>这个参数表示操作系统允许TIME_WAIT套接字数量的最大值， 如果超过这个数字，TIME_WAIT套接字将立刻被清除并打印警告信息。该参数默认为 180000，过多的TIME_WAIT套接字会使Web服务器变慢。</p>
+</blockquote>
+</li>
+<li><p>net.core.netdev_max_backlog &#x3D; 262144</p>
+<blockquote>
+<p>每个网络接口接收数据包的速率比内核处理这些包的速率快时，允许送到队列的数据包的最大数目。</p>
+</blockquote>
+</li>
+<li><p>net.ipv4.tcp_max_orphans &#x3D; 262144</p>
+<blockquote>
+<p>系统中最多有多少个TCP套接字不被关联到任何一个用户文件句柄上。如果超过这个数字，孤儿连接将即刻被复位并打印出警告信息。这个限制仅仅是为了防止简单的DoS攻击，不能过分依靠它或者人为地减小这个值，更应该增加这个值(如果增加了内存之后)。</p>
+</blockquote>
+</li>
+<li><p>net.ipv4.tcp_tw_reuse &#x3D; 1</p>
+<blockquote>
+<p>表示开启重用。允许将TIME-WAIT sockets重新用于新的TCP连接，默认为0，表示关闭</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="Nginx-配置方面"><a href="#Nginx-配置方面" class="headerlink" title="Nginx 配置方面"></a>Nginx 配置方面</h4><ul>
+<li><p>worker_processes 4</p>
+<blockquote>
+<p>nginx进程数，建议按照cpu数目来指定，一般跟cpu核数相同或为它的倍数。</p>
+</blockquote>
+</li>
+<li><p>worker_cpu_affinity 00000001 00000010 00000100 00001000 ;</p>
+<blockquote>
+<p>为每个进程分配cpu，上例中将4个进程分配到4个cpu，当然可以写多个，或者将一个进程分配到多个cpu。</p>
+</blockquote>
+</li>
+<li><p>worker_rlimit_nofile</p>
+<blockquote>
+<p>这个指令是指当一个nginx进程打开的最多文件描述符数目，理论值应该是系统的最多打开文件数（ulimit -n）与nginx进程数相除，但是nginx分配请求并不是那么均匀，所以最好与ulimit -n的值保持一致。</p>
+</blockquote>
+</li>
+<li><p>use epoll;</p>
+<blockquote>
+<p>使用epoll的I&#x2F;O模型，用这个模型来高效处理异步事件</p>
+</blockquote>
+</li>
+<li><p>worker_connections 65535;</p>
+<blockquote>
+<p>每个进程允许的最多连接数，理论上每台nginx服务器的最大连接数为worker_processes_worker_connections。这个值太小的后果就是你的系统会报：too many open files 等错误，导致你的系统死掉。一般给到服务器后最好通过 ulimit 命令结合修改 &#x2F;etc&#x2F;security&#x2F;limits.conf（增加_ soft nofile &#x3D; * hard nofile&#x3D;）两个配置值，将其设置的更大些。</p>
+</blockquote>
+</li>
+<li><p>keepalive_timeout 30;</p>
+<blockquote>
+<p>http连接超时时间，默认是60s，功能是使客户端到服务器端的连接在设定的时间内持续有效，当出现对服务器的后继请求时，该功能避免了建立或者重新建立连接。切记这个参数也不能设置过大！否则会导致许多无效的http连接占据着nginx的连接数，终nginx崩溃！</p>
+</blockquote>
+</li>
+<li><p>client_header_buffer_size 4k;</p>
+<blockquote>
+<p>客户端请求头部的缓冲区大小，这个可以根据你的系统分页大小来设置，一般一个请求的头部大小不会超过1k，不过由于一般系统分页都要大于1k，所以这里设置为分页大小。分页大小可以用命令getconf PAGESIZE取得。</p>
+</blockquote>
+</li>
+<li><p>open_file_cache max&#x3D;102400 inactive&#x3D;20s;</p>
+<blockquote>
+<p>这个参数将为打开文件指定缓存，默认是没有启用的，max指定缓存数量，建议和打开文件数一致，inactive是指经过多长时间文件没被请求后删除缓存。</p>
+</blockquote>
+</li>
+<li><p>open_file_cache_valid 30s;</p>
+<blockquote>
+<p>指多长时间检查一次缓存的有效信息。</p>
+</blockquote>
+</li>
+<li><p>open_file_cache_min_uses 1</p>
+<blockquote>
+<p>open_file_cache指令中的inactive参数时间内文件的最少使用次数，如果超过这个数字，文件描述符一直是在缓存中打开的，如上例，如果有一个文件在inactive时间内一次没被使用，它将被移除。</p>
+</blockquote>
+</li>
+<li><p>sendfile on;</p>
+<blockquote>
+<p>sendfile()可以在磁盘和TCP socket之间互相拷贝数据(或任意两个文件描述符)。Pre-sendfile是传送数据之前在用户空间申请数据缓冲区。之后用read()将数据从文件拷贝到这个缓冲区，write()将缓冲区数据写入网络。sendfile()是立即将数据从磁盘读到OS缓存。因为这种拷贝是在内核完成的，sendfile()要比组合read()和write()以及打开关闭丢弃缓冲更加有效(更多有关于sendfile)。</p>
+</blockquote>
+</li>
+<li><p>tcp_nopush on;</p>
+<blockquote>
+<p>告诉nginx在一个数据包里发送所有头文件，而不一个接一个的发送。就是说数据包不会马上传送出去，等到数据包最大时，一次性的传输出去，这样有助于解决网络堵塞。</p>
+</blockquote>
+</li>
+<li><p>tcp_nodelay on;</p>
+<blockquote>
+<p>告诉nginx不要缓存数据，而是一段一段的发送–当需要及时发送数据时，就应该给应用设置这个属性，这样发送一小块数据信息时就不能立即得到返回值。</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="upstream-容错配置说明"><a href="#upstream-容错配置说明" class="headerlink" title="upstream 容错配置说明"></a>upstream 容错配置说明</h2><ol>
+<li><p>判断节点失效状态 Nginx默认判断失败节点状态以connect refuse和time out状态为准，不以HTTP错误状态进行判断失败，因为HTTP只要能返回状态说明该节点还可以正常连接，所以nginx判断其还是存活状态；除非添加了proxy_next_upstream指令设置对404、502、503、504、500和time out等错误进行转到备机处理，在next_upstream过程中，会对fails进行累加，如果备用机处理还是错误则直接返回错误信息（但404不进行记录到错误数，如果不配置错误状态也不对其进行错误状态记录），综述，nginx记录错误数量只记录timeout 、connect refuse、502、500、503、504这6种状态，timeout和connect refuse是永远被记录错误状态，而502、500、503、504只有在配置proxy_next_upstream后nginx才会记录这4种HTTP错误到fails中，当fails大于等于max_fails时，则该节点失效；</p>
+</li>
+<li><p>nginx 处理节点失效和恢复的触发条件 nginx可以通过设置max_fails（最大尝试失败次数）和fail_timeout（失效时间，在到达最大尝试失败次数后，在fail_timeout的时间范围内节点被置为失效，除非所有节点都失效，否则该时间内，节点不进行恢复）对节点失败的尝试次数和失效时间进行设置，当超过最大尝试次数或失效时间未超过配置失效时间，则nginx会对节点状会置为失效状态，nginx不对该后端进行连接，<strong>直到超过失效时间或者所有节点都失效后，该节点重新置为有效，重新探测</strong>；</p>
+</li>
+<li><p>所有节点失效后nginx将重新恢复所有节点进行探测 如果探测所有节点均失效，备机也为失效时，那么nginx会对所有节点恢复为有效，重新尝试探测有效节点，如果探测到有效节点则返回正确节点内容，如果还是全部错误，那么继续探测下去，当没有正确信息时，节点失效时默认返回状态为502，但是下次访问节点时会继续探测正确节点，直到找到正确的为止。</p>
+</li>
+<li><p>通过proxy_next_upstream实现容灾和重复处理问题 ngx_http_proxy_module 模块中包括proxy_next_upstream指令 语法: proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504 http_404 off …; 默认值: proxy_next_upstream error timeout; 上下文: http, server, location</p>
+</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">其中：</span><br><span class="line">error   表示和后端服务器建立连接时，或者向后端服务器发送请求时，或者从后端服务器接收响应头时，出现错误。</span><br><span class="line">timeout   表示和后端服务器建立连接时，或者向后端服务器发送请求时，或者从后端服务器接收响应头时，出现超时。</span><br><span class="line">invalid_header   表示后端服务器返回空响应或者非法响应头</span><br><span class="line">http_500   表示后端服务器返回的响应状态码为500</span><br><span class="line">http_502   表示后端服务器返回的响应状态码为502</span><br><span class="line">http_503   表示后端服务器返回的响应状态码为503</span><br><span class="line">http_504   表示后端服务器返回的响应状态码为504</span><br><span class="line">http_404   表示后端服务器返回的响应状态码为404</span><br><span class="line">off   表示停止将请求发送给下一台后端服务器</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p><strong>常用 nginx 标准配置（仅供参考）</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">user</span>   <span class="string">www www;</span></span><br><span class="line"><span class="attr">worker_processes</span> <span class="string">8;</span></span><br><span class="line"><span class="attr">worker_cpu_affinity</span> <span class="string">00000001 00000010 00000100 00001000 00010000 00100000 01000000;</span></span><br><span class="line"><span class="attr">error_log</span>   <span class="string">/www/log/nginx_error.log   crit;</span></span><br><span class="line"><span class="attr">pid</span>         <span class="string">/usr/local/nginx/nginx.pid;</span></span><br><span class="line"><span class="attr">worker_rlimit_nofile</span> <span class="string">65535;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">events</span></span><br><span class="line"><span class="attr">&#123;</span></span><br><span class="line">   <span class="attr">use</span> <span class="string">epoll;</span></span><br><span class="line">   <span class="attr">worker_connections</span> <span class="string">65535;</span></span><br><span class="line"><span class="attr">&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">http</span></span><br><span class="line"><span class="attr">&#123;</span></span><br><span class="line">   <span class="attr">include</span>       <span class="string">mime.types;</span></span><br><span class="line">   <span class="attr">default_type</span>   <span class="string">application/octet-stream;</span></span><br><span class="line"></span><br><span class="line">   <span class="attr">charset</span>   <span class="string">utf-8;</span></span><br><span class="line"></span><br><span class="line">   <span class="attr">server_names_hash_bucket_size</span> <span class="string">128;</span></span><br><span class="line">   <span class="attr">client_header_buffer_size</span> <span class="string">2k;</span></span><br><span class="line">   <span class="attr">large_client_header_buffers</span> <span class="string">4 4k;</span></span><br><span class="line">   <span class="attr">client_max_body_size</span> <span class="string">8m;</span></span><br><span class="line"></span><br><span class="line">   <span class="attr">sendfile</span> <span class="string">on;</span></span><br><span class="line">   <span class="attr">tcp_nopush</span>     <span class="string">on;</span></span><br><span class="line"></span><br><span class="line">   <span class="attr">keepalive_timeout</span> <span class="string">60;</span></span><br><span class="line"></span><br><span class="line">   <span class="attr">fastcgi_cache_path</span> <span class="string">/usr/local/nginx/fastcgi_cache levels=1:2</span></span><br><span class="line">                 <span class="attr">keys_zone</span>=<span class="string">TEST:10m</span></span><br><span class="line">                 <span class="attr">inactive</span>=<span class="string">5m;</span></span><br><span class="line">   <span class="attr">fastcgi_connect_timeout</span> <span class="string">300;</span></span><br><span class="line">   <span class="attr">fastcgi_send_timeout</span> <span class="string">300;</span></span><br><span class="line">   <span class="attr">fastcgi_read_timeout</span> <span class="string">300;</span></span><br><span class="line">   <span class="attr">fastcgi_buffer_size</span> <span class="string">16k;</span></span><br><span class="line">   <span class="attr">fastcgi_buffers</span> <span class="string">16 16k;</span></span><br><span class="line">   <span class="attr">fastcgi_busy_buffers_size</span> <span class="string">16k;</span></span><br><span class="line">   <span class="attr">fastcgi_temp_file_write_size</span> <span class="string">16k;</span></span><br><span class="line">   <span class="attr">fastcgi_cache</span> <span class="string">TEST;</span></span><br><span class="line">   <span class="attr">fastcgi_cache_valid</span> <span class="string">200 302 1h;</span></span><br><span class="line">   <span class="attr">fastcgi_cache_valid</span> <span class="string">301 1d;</span></span><br><span class="line">   <span class="attr">fastcgi_cache_valid</span> <span class="string">any 1m;</span></span><br><span class="line">   <span class="attr">fastcgi_cache_min_uses</span> <span class="string">1;</span></span><br><span class="line">   <span class="attr">fastcgi_cache_use_stale</span> <span class="string">error timeout invalid_header http_500; </span></span><br><span class="line">   <span class="attr">open_file_cache</span> <span class="string">max=204800 inactive=20s;</span></span><br><span class="line">   <span class="attr">open_file_cache_min_uses</span> <span class="string">1;</span></span><br><span class="line">   <span class="attr">open_file_cache_valid</span> <span class="string">30s; </span></span><br><span class="line"></span><br><span class="line">   <span class="attr">tcp_nodelay</span> <span class="string">on;</span></span><br><span class="line"></span><br><span class="line">   <span class="attr">gzip</span> <span class="string">on;</span></span><br><span class="line">   <span class="attr">gzip_min_length</span>   <span class="string">1k;</span></span><br><span class="line">   <span class="attr">gzip_buffers</span>     <span class="string">4 16k;</span></span><br><span class="line">   <span class="attr">gzip_http_version</span> <span class="string">1.0;</span></span><br><span class="line">   <span class="attr">gzip_comp_level</span> <span class="string">2;</span></span><br><span class="line">   <span class="attr">gzip_types</span>       <span class="string">text/plain application/x-javascript text/css application/xml;</span></span><br><span class="line">   <span class="attr">gzip_vary</span> <span class="string">on;</span></span><br><span class="line"></span><br><span class="line"> <span class="attr">upstream</span>  <span class="string">test &#123;</span></span><br><span class="line">        <span class="attr">server</span> <span class="string">192.168.5.34:9083 max_fails=3  fail_timeout=5s;</span></span><br><span class="line">        <span class="attr">server</span> <span class="string">192.168.5.35:9083 max_fails=3  fail_timeout=5s;</span></span><br><span class="line">        <span class="attr">server</span> <span class="string">192.168.5.36:9083 max_fails=3  fail_timeout=5s;</span></span><br><span class="line">    <span class="attr">&#125;</span></span><br><span class="line">   <span class="attr">server</span></span><br><span class="line">   <span class="attr">&#123;</span></span><br><span class="line">     <span class="attr">listen</span>       <span class="string">80;</span></span><br><span class="line">     <span class="attr">server_name</span>   <span class="string">www.test.com;</span></span><br><span class="line">     <span class="attr">index</span> <span class="string">index.php index.htm;</span></span><br><span class="line">     <span class="attr">root</span>   <span class="string">/www/html/;</span></span><br><span class="line"></span><br><span class="line">   <span class="attr">location</span> <span class="string">/</span></span><br><span class="line">     <span class="attr">&#123;</span></span><br><span class="line">        <span class="attr">proxy_pass</span> <span class="string">http://test;</span></span><br><span class="line">            <span class="attr">proxy_set_header</span>   <span class="string">Host    $host;</span></span><br><span class="line">            <span class="attr">proxy_set_header</span>   <span class="string">X-Real-IP   $remote_addr;</span></span><br><span class="line">            <span class="attr">proxy_set_header</span>   <span class="string">X-Forwarded-For $proxy_add_x_forwarded_for;</span></span><br><span class="line">     <span class="attr">&#125;</span></span><br><span class="line">     <span class="attr">location</span> <span class="string">/status</span></span><br><span class="line">     <span class="attr">&#123;</span></span><br><span class="line">         <span class="attr">stub_status</span> <span class="string">on;</span></span><br><span class="line">     <span class="attr">&#125;</span></span><br><span class="line"></span><br><span class="line">     <span class="attr">location</span> <span class="string">~ .*\.(phpphp5)?$</span></span><br><span class="line">     <span class="attr">&#123;</span></span><br><span class="line">         <span class="attr">fastcgi_pass</span> <span class="string">127.0.0.1:9000;</span></span><br><span class="line">         <span class="attr">fastcgi_index</span> <span class="string">index.php;</span></span><br><span class="line">         <span class="attr">include</span> <span class="string">fcgi.conf;</span></span><br><span class="line">     <span class="attr">&#125;</span></span><br><span class="line"></span><br><span class="line">     <span class="attr">location</span> <span class="string">~ .*\.(gifjpgjpegpngbmpswfjscss)$</span></span><br><span class="line">     <span class="attr">&#123;</span></span><br><span class="line">       <span class="attr">expires</span>       <span class="string">30d;</span></span><br><span class="line">     <span class="attr">&#125;</span></span><br><span class="line"></span><br><span class="line">     <span class="attr">log_format</span>   <span class="string">access   &#x27;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#x27;</span></span><br><span class="line">               <span class="attr">&#x27;$status</span> <span class="string">$body_bytes_sent &quot;$http_referer&quot; &#x27;</span></span><br><span class="line">               <span class="attr">&#x27;&quot;$http_user_agent&quot;</span> <span class="string">$http_x_forwarded_for&#x27;;</span></span><br><span class="line">     <span class="attr">access_log</span>   <span class="string">/www/log/access.log   access;</span></span><br><span class="line">       <span class="attr">&#125;</span></span><br><span class="line"><span class="attr">&#125;</span></span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag"><i class="fa fa-tag"></i> 运维</a>
+              <a href="/tags/%E8%AE%B0%E5%BD%95/" rel="tag"><i class="fa fa-tag"></i> 记录</a>
+              <a href="/tags/nginx/" rel="tag"><i class="fa fa-tag"></i> nginx</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/08/10/%E3%80%90python3webspider03%E3%80%91%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/" rel="prev" title="【Python3WebSpider03】正则表达式">
+      <i class="fa fa-chevron-left"></i> 【Python3WebSpider03】正则表达式
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/08/17/%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E7%81%B0%E5%BA%A6%E5%8F%91%E5%B8%83%E8%B0%83%E6%95%B4/" rel="next" title="记一次生产环境灰度发布调整">
+      记一次生产环境灰度发布调整 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#nginx-%E4%BC%98%E5%8C%96"><span class="nav-number">1.</span> <span class="nav-text">nginx 优化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%AB%98%E5%B9%B6%E5%8F%91%E4%BC%98%E5%8C%96"><span class="nav-number">1.1.</span> <span class="nav-text">高并发优化</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%B3%BB%E7%BB%9F%E5%86%85%E6%A0%B8%E5%B1%82%E9%9D%A2"><span class="nav-number">1.1.0.1.</span> <span class="nav-text">系统内核层面</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Nginx-%E9%85%8D%E7%BD%AE%E6%96%B9%E9%9D%A2"><span class="nav-number">1.1.0.2.</span> <span class="nav-text">Nginx 配置方面</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#upstream-%E5%AE%B9%E9%94%99%E9%85%8D%E7%BD%AE%E8%AF%B4%E6%98%8E"><span class="nav-number">1.2.</span> <span class="nav-text">upstream 容错配置说明</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Sven</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">91</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/sven0219" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;sven0219" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hi@svenshen.com" title="E-Mail → mailto:hi@svenshen.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="visitors-count">
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_uv">
+       Visitors :<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_pv">
+       Views : <span id="busuanzi_value_site_pv"></span>
+    </span>
+</div>
+
+<div class="copyright">
+  
+  &copy; 2022 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sven</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">276k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'ffcb8e4e993246f4af3c',
+      clientSecret: '83d999522d8c8f95f55bff4c2040b92858084127',
+      repo        : 'sven0219.github.io',
+      owner       : 'sven0219',
+      admin       : ['sven0219'],
+      id          : 'a3690c7a198caa53dafa9da056e40944',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

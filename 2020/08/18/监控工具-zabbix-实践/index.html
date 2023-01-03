@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.52ynn.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":true,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="介绍引用百度百科  zabbix 是一个基于WEB界面的提供分布式系统监视以及网络监视功能的企业级的开源解决方案。 zabbix能监视各种网络参数，保证服务器系统的安全运营；并提供灵活的通知机制以让系统管理员快速定位&#x2F;解决存在的各种问题。 zabbix由2部分构成，zabbix server与可选组件zabbix agent。 zabbix server可以通过SNMP，zabbix a">
+<meta property="og:type" content="article">
+<meta property="og:title" content="监控工具 zabbix 实践">
+<meta property="og:url" content="https://blog.52ynn.top/2020/08/18/%E7%9B%91%E6%8E%A7%E5%B7%A5%E5%85%B7-zabbix-%E5%AE%9E%E8%B7%B5/index.html">
+<meta property="og:site_name" content="Sven&#39;s Blog">
+<meta property="og:description" content="介绍引用百度百科  zabbix 是一个基于WEB界面的提供分布式系统监视以及网络监视功能的企业级的开源解决方案。 zabbix能监视各种网络参数，保证服务器系统的安全运营；并提供灵活的通知机制以让系统管理员快速定位&#x2F;解决存在的各种问题。 zabbix由2部分构成，zabbix server与可选组件zabbix agent。 zabbix server可以通过SNMP，zabbix a">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/NGFpVQa3q8Uz7T6.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/c6bOi14uBNZkeaF.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/iFLs5SjabwREN29.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/E2QJBzwjdR3pTaH.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/bOlmG9rKe6xv24a.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/lI5iqQu28KVeDnR.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/liTdkcI4JnsOePZ.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/BDdjoqPp28y6swZ.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/jgW6yXkO4r5xnGH.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/DItweYT2dk6aFKR.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/nGbVye1HxdTw43j.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/KDoYn4ieyhTpBZ9.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/4cZsRHYfUzeNgOT.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/nPtfirwkSOLZ8vU.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/2qj7vZNUGRrhJud.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/BLJubf4ly6wDdpx.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/QXokuI48FRAMbZt.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/nM3hbDLywFpoG2j.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/qHbpKRF3y6IQovW.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/HQsyhobVgJUTrOW.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/FKzCinHRm75I1qs.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/18/sBThqApaG3x12DI.jpg">
+<meta property="article:published_time" content="2020-08-18T13:59:03.000Z">
+<meta property="article:modified_time" content="2023-01-03T04:48:39.638Z">
+<meta property="article:author" content="Sven">
+<meta property="article:tag" content="运维">
+<meta property="article:tag" content="zabbix">
+<meta property="article:tag" content="监控">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/08/18/NGFpVQa3q8Uz7T6.jpg">
+
+<link rel="canonical" href="https://blog.52ynn.top/2020/08/18/%E7%9B%91%E6%8E%A7%E5%B7%A5%E5%85%B7-zabbix-%E5%AE%9E%E8%B7%B5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>监控工具 zabbix 实践 | Sven's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Sven's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Do more ,say less !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://blog.52ynn.top/2020/08/18/%E7%9B%91%E6%8E%A7%E5%B7%A5%E5%85%B7-zabbix-%E5%AE%9E%E8%B7%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Sven">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sven's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          监控工具 zabbix 实践
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-08-18 13:59:03" itemprop="dateCreated datePublished" datetime="2020-08-18T13:59:03+00:00">2020-08-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-01-03 04:48:39" itemprop="dateModified" datetime="2023-01-03T04:48:39+00:00">2023-01-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/skills/" itemprop="url" rel="index"><span itemprop="name">skills</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.4k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>引用百度百科</p>
+<blockquote>
+<p>zabbix 是一个基于WEB界面的提供分布式系统监视以及网络监视功能的企业级的开源解决方案。 zabbix能监视各种网络参数，保证服务器系统的安全运营；并提供灵活的通知机制以让系统管理员快速定位&#x2F;解决存在的各种问题。 zabbix由2部分构成，zabbix server与可选组件zabbix agent。 zabbix server可以通过SNMP，zabbix agent，ping，端口监视等方法提供对远程服务器&#x2F;网络状态的监视，数据收集等功能，它可以运行在Linux，Solaris，HP-UX，AIX，Free BSD，Open BSD，OS X等平台上。</p>
+</blockquote>
+<span id="more"></span>
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><p>这里我用的机器是阿里云采购的 ECS，系统版本如下 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/NGFpVQa3q8Uz7T6.jpg"><img src="https://i.loli.net/2020/08/18/NGFpVQa3q8Uz7T6.jpg"></a> 使用的 zabbix 为目前最新版本，zabbix5.0，使用二进制包安装，数据库使用的位 mysql5.7。 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/c6bOi14uBNZkeaF.jpg"><img src="https://i.loli.net/2020/08/18/c6bOi14uBNZkeaF.jpg"></a></p>
+<h3 id="安装repository"><a href="#安装repository" class="headerlink" title="安装repository"></a>安装repository</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">rpm -Uvh https://repo.zabbix.com/zabbix/5.0/rhel/7/x86_64/zabbix-release-5.0-1.el7.noarch.rpm</span><br><span class="line">yum clean all</span><br></pre></td></tr></table></figure>
+
+<h3 id="安装-zabbix-server-和-agent"><a href="#安装-zabbix-server-和-agent" class="headerlink" title="安装 zabbix server 和 agent"></a>安装 zabbix server 和 agent</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install zabbix-server-mysql zabbix-agent</span><br></pre></td></tr></table></figure>
+
+<p>由于网络问题， yum 下载慢上述命令可能会报错 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/iFLs5SjabwREN29.jpg"><img src="https://i.loli.net/2020/08/18/iFLs5SjabwREN29.jpg"></a> 在服务器外部将 rpm 包下载好后上传至服务器进行安装 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/E2QJBzwjdR3pTaH.jpg"><img src="https://i.loli.net/2020/08/18/E2QJBzwjdR3pTaH.jpg"></a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 通过本地二进制包安装</span></span><br><span class="line">yum install ./zabbix-* -y</span><br></pre></td></tr></table></figure>
+
+<h3 id="安装-zabbix-frontend"><a href="#安装-zabbix-frontend" class="headerlink" title="安装 zabbix frontend"></a>安装 zabbix frontend</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 开启Red Hat Software Collections</span></span><br><span class="line">yum install centos-release-scl</span><br><span class="line"><span class="comment"># 编辑 /etc/yum.repos.d/zabbix.repo</span></span><br><span class="line">[zabbix-frontend]</span><br><span class="line">...</span><br><span class="line">enabled=1</span><br><span class="line">...</span><br><span class="line"><span class="comment"># 安装 frontend package</span></span><br><span class="line">yum install zabbix-web-mysql-scl zabbix-nginx-conf-scl</span><br></pre></td></tr></table></figure>
+
+<p>这个步骤会有<code>zabbix-web-5.0.2-1.el7.noarch.rpm</code>下载失败的情况出现，这里也是服务器外部下载好上传至服务器安装。</p>
+<blockquote>
+<p>无法下载的 rpm 包链接: <a target="_blank" rel="noopener" href="https://pan.baidu.com/s/1iZczDNB-4Sz52bUbPMowNw">https://pan.baidu.com/s/1iZczDNB-4Sz52bUbPMowNw</a> 密码: ovr8</p>
+</blockquote>
+<h1 id="创建初始化数据库"><a href="#创建初始化数据库" class="headerlink" title="创建初始化数据库"></a>创建初始化数据库</h1><p>这里安装 mysql 服务就省略了，按照官网文档或者搜索引擎上有很多教程。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">登陆数据库</span></span><br><span class="line">mysql -uroot -p</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">创建数据库</span></span><br><span class="line">create database zabbix character set utf8 collate utf8_bin;</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">创建用户</span></span><br><span class="line"> create user zabbix@localhost identified by &#x27;password&#x27;;</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">赋权</span></span><br><span class="line">grant all privileges on zabbix.* to zabbix@localhost;</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">退出 mysql 命令行</span></span><br><span class="line">quit;</span><br></pre></td></tr></table></figure>
+
+<p>数据库创建完成后初始化数据库</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">zcat /usr/share/doc/zabbix-server-mysql*/create.sql.gz  mysql -uzabbix -p zabbix</span><br></pre></td></tr></table></figure>
+
+<p>等待 1 分钟左右即可，查询数据库中部分表如下： <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/bOlmG9rKe6xv24a.jpg"><img src="https://i.loli.net/2020/08/18/bOlmG9rKe6xv24a.jpg"></a></p>
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><h3 id="为-zabbix-server-配置数据库"><a href="#为-zabbix-server-配置数据库" class="headerlink" title="为 zabbix server 配置数据库"></a>为 zabbix server 配置数据库</h3><p>编辑&#x2F;etc&#x2F;zabbix&#x2F;zabbix_server.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># password 修改为自己设置的密码</span><br><span class="line">DBPassword=password</span><br></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/lI5iqQu28KVeDnR.jpg"><img src="https://i.loli.net/2020/08/18/lI5iqQu28KVeDnR.jpg"></a> 如用户名、数据库名、数据库地址不一样也需要修改配置</p>
+<h3 id="为-zabbix-frontend-配置-PHP"><a href="#为-zabbix-frontend-配置-PHP" class="headerlink" title="为 zabbix frontend 配置 PHP"></a>为 zabbix frontend 配置 PHP</h3><p>编辑<code>/etc/opt/rh/rh-nginx116/nginx/conf.d/zabbix.conf</code> 将图示这两行注释去掉，server_name 改成自己的域名或者服务器 ip <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/liTdkcI4JnsOePZ.jpg"><img src="https://i.loli.net/2020/08/18/liTdkcI4JnsOePZ.jpg"></a> 编辑<code>/etc/opt/rh/rh-php72/php-fpm.d/zabbix.conf</code>,在<code>listen.acl_users</code>行添加 nginx，并修改正确时区 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/BDdjoqPp28y6swZ.jpg"><img src="https://i.loli.net/2020/08/18/BDdjoqPp28y6swZ.jpg"></a></p>
+<h1 id="启动-server-和-agent"><a href="#启动-server-和-agent" class="headerlink" title="启动 server 和 agent"></a>启动 server 和 agent</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 启动</span></span><br><span class="line">systemctl restart zabbix-server zabbix-agent rh-nginx116-nginx rh-php72-php-fpm</span><br><span class="line"><span class="comment"># 设置开机自启</span></span><br><span class="line">systemctl <span class="built_in">enable</span> zabbix-server zabbix-agent rh-nginx116-nginx rh-php72-php-fpm</span><br></pre></td></tr></table></figure>
+
+<h1 id="访问服务"><a href="#访问服务" class="headerlink" title="访问服务"></a>访问服务</h1><p>通过 ip 或者域名（前面配置的 server_name）访问 <strong>初始化页面</strong> <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/jgW6yXkO4r5xnGH.jpg"><img src="https://i.loli.net/2020/08/18/jgW6yXkO4r5xnGH.jpg"></a> <strong>环境监测</strong> <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/DItweYT2dk6aFKR.jpg"><img src="https://i.loli.net/2020/08/18/DItweYT2dk6aFKR.jpg"></a> <strong>数据库配置</strong> <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/nGbVye1HxdTw43j.jpg"><img src="https://i.loli.net/2020/08/18/nGbVye1HxdTw43j.jpg"></a> <strong>设置服务名称</strong> <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/KDoYn4ieyhTpBZ9.jpg"><img src="https://i.loli.net/2020/08/18/KDoYn4ieyhTpBZ9.jpg"></a> <strong>检查配置</strong> <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/4cZsRHYfUzeNgOT.jpg"><img src="https://i.loli.net/2020/08/18/4cZsRHYfUzeNgOT.jpg"></a> <strong>安装完成</strong> <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/nPtfirwkSOLZ8vU.jpg"><img src="https://i.loli.net/2020/08/18/nPtfirwkSOLZ8vU.jpg"></a> <strong>首次登陆</strong> 初始账号 <code>Admin</code>，初始密码<code>zabbix</code>（登陆之后第一时间修改密码） <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/2qj7vZNUGRrhJud.jpg"><img src="https://i.loli.net/2020/08/18/2qj7vZNUGRrhJud.jpg"></a> <strong>修改语言（非必须）</strong> <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/BLJubf4ly6wDdpx.jpg"><img src="https://i.loli.net/2020/08/18/BLJubf4ly6wDdpx.jpg"></a> 至此，安装已完成，下面配置一个简单的监控。</p>
+<h1 id="配置监控"><a href="#配置监控" class="headerlink" title="配置监控"></a>配置监控</h1><p>刚进入会有一个主机了，这个是 zabbix 服务器所在的主机，现在准备新建一个主机。 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/QXokuI48FRAMbZt.jpg"><img src="https://i.loli.net/2020/08/18/QXokuI48FRAMbZt.jpg"></a></p>
+<h3 id="在新主机上安装-agent"><a href="#在新主机上安装-agent" class="headerlink" title="在新主机上安装 agent"></a>在新主机上安装 agent</h3><p>下载<code>zabbix-agent-5.0.2-1.el7.x86_64.rpm</code>,上面的百度网盘的链接，上传至服务器 安装 agent</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install zabbix-agent-5.0.2-1.el7.x86_64.rpm</span><br></pre></td></tr></table></figure>
+
+<h3 id="配置-agent"><a href="#配置-agent" class="headerlink" title="配置 agent"></a>配置 agent</h3><p>vi &#x2F;etc&#x2F;zabbix&#x2F;zabbix_agentd.conf</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">…</span><br><span class="line">Server=172.16.177.24 <span class="comment">#zabbix-server端IP</span></span><br><span class="line">…</span><br><span class="line">ServerActive=Server=172.16.177.24  <span class="comment">#zabbix-server端IP</span></span><br><span class="line">…</span><br><span class="line">Hostname= swq_aliyun <span class="comment">#主动模式IP要一致</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="web端配置"><a href="#web端配置" class="headerlink" title="web端配置"></a>web端配置</h3><p>添加主机 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/nM3hbDLywFpoG2j.jpg"><img src="https://i.loli.net/2020/08/18/nM3hbDLywFpoG2j.jpg"></a> 添加配置模板 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/qHbpKRF3y6IQovW.jpg"><img src="https://i.loli.net/2020/08/18/qHbpKRF3y6IQovW.jpg"></a> <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/HQsyhobVgJUTrOW.jpg"><img src="https://i.loli.net/2020/08/18/HQsyhobVgJUTrOW.jpg"></a> 添加成功后即可看到数据 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/FKzCinHRm75I1qs.jpg"><img src="https://i.loli.net/2020/08/18/FKzCinHRm75I1qs.jpg"></a> <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/18/sBThqApaG3x12DI.jpg"><img src="https://i.loli.net/2020/08/18/sBThqApaG3x12DI.jpg"></a> 表格字体乱码可在服务器上安装黑体即可解决。 至此，zabbix 安装及简单配置已完成，zabbix 功能很强大，更多的配置需要自己去摸索。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag"><i class="fa fa-tag"></i> 运维</a>
+              <a href="/tags/zabbix/" rel="tag"><i class="fa fa-tag"></i> zabbix</a>
+              <a href="/tags/%E7%9B%91%E6%8E%A7/" rel="tag"><i class="fa fa-tag"></i> 监控</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/08/17/%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E7%81%B0%E5%BA%A6%E5%8F%91%E5%B8%83%E8%B0%83%E6%95%B4/" rel="prev" title="记一次生产环境灰度发布调整">
+      <i class="fa fa-chevron-left"></i> 记一次生产环境灰度发布调整
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/08/26/%E8%8B%B1%E8%AF%AD%E6%B5%81%E5%88%A9%E8%AF%B4%E9%9D%A2%E8%AF%95%E8%AE%B0%E5%BD%95/" rel="next" title="英语流利说面试记录">
+      英语流利说面试记录 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85"><span class="nav-number">2.</span> <span class="nav-text">安装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85repository"><span class="nav-number">2.0.1.</span> <span class="nav-text">安装repository</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-zabbix-server-%E5%92%8C-agent"><span class="nav-number">2.0.2.</span> <span class="nav-text">安装 zabbix server 和 agent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-zabbix-frontend"><span class="nav-number">2.0.3.</span> <span class="nav-text">安装 zabbix frontend</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%88%9D%E5%A7%8B%E5%8C%96%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">3.</span> <span class="nav-text">创建初始化数据库</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE"><span class="nav-number">4.</span> <span class="nav-text">配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA-zabbix-server-%E9%85%8D%E7%BD%AE%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">4.0.1.</span> <span class="nav-text">为 zabbix server 配置数据库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA-zabbix-frontend-%E9%85%8D%E7%BD%AE-PHP"><span class="nav-number">4.0.2.</span> <span class="nav-text">为 zabbix frontend 配置 PHP</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8-server-%E5%92%8C-agent"><span class="nav-number">5.</span> <span class="nav-text">启动 server 和 agent</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AE%BF%E9%97%AE%E6%9C%8D%E5%8A%A1"><span class="nav-number">6.</span> <span class="nav-text">访问服务</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E7%9B%91%E6%8E%A7"><span class="nav-number">7.</span> <span class="nav-text">配置监控</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E6%96%B0%E4%B8%BB%E6%9C%BA%E4%B8%8A%E5%AE%89%E8%A3%85-agent"><span class="nav-number">7.0.1.</span> <span class="nav-text">在新主机上安装 agent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE-agent"><span class="nav-number">7.0.2.</span> <span class="nav-text">配置 agent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#web%E7%AB%AF%E9%85%8D%E7%BD%AE"><span class="nav-number">7.0.3.</span> <span class="nav-text">web端配置</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Sven</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">91</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/sven0219" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;sven0219" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hi@svenshen.com" title="E-Mail → mailto:hi@svenshen.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="visitors-count">
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_uv">
+       Visitors :<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_pv">
+       Views : <span id="busuanzi_value_site_pv"></span>
+    </span>
+</div>
+
+<div class="copyright">
+  
+  &copy; 2022 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sven</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">276k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'ffcb8e4e993246f4af3c',
+      clientSecret: '83d999522d8c8f95f55bff4c2040b92858084127',
+      repo        : 'sven0219.github.io',
+      owner       : 'sven0219',
+      admin       : ['sven0219'],
+      id          : 'bd6dc38076757016676dbeead3baad72',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

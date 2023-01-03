@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.52ynn.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":true,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="正则表达式正则表达式是处理字符串的强大工具，它有自己特定的语法结构，可以实现字符串的检索、替换、匹配认证，是爬虫学习中必不可少的一个工具">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【Python3WebSpider03】正则表达式">
+<meta property="og:url" content="https://blog.52ynn.top/2020/08/10/%E3%80%90python3webspider03%E3%80%91%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/index.html">
+<meta property="og:site_name" content="Sven&#39;s Blog">
+<meta property="og:description" content="正则表达式正则表达式是处理字符串的强大工具，它有自己特定的语法结构，可以实现字符串的检索、替换、匹配认证，是爬虫学习中必不可少的一个工具">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://i.loli.net/2020/08/10/vN6Hd2jcyTPsfSo.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/13/U2DACisTvJwIgyP.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/13/23KQNOtCkAJSon5.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/13/jsMemxtwiG697uf.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/13/XNxERJFauW36vif.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/13/QrtGAR1vzPcae3N.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/13/DkdmTNpwq8jWOE9.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/13/dSA8gX6RLTpkiGU.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/13/JEr863zZGIfFOuw.jpg">
+<meta property="og:image" content="https://i.loli.net/2020/08/13/o4xKuqzslGcpfF8.jpg">
+<meta property="article:published_time" content="2020-08-10T15:58:46.000Z">
+<meta property="article:modified_time" content="2023-01-03T04:48:39.638Z">
+<meta property="article:author" content="Sven">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="爬虫">
+<meta property="article:tag" content="正则">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/08/10/vN6Hd2jcyTPsfSo.jpg">
+
+<link rel="canonical" href="https://blog.52ynn.top/2020/08/10/%E3%80%90python3webspider03%E3%80%91%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>【Python3WebSpider03】正则表达式 | Sven's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Sven's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Do more ,say less !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://blog.52ynn.top/2020/08/10/%E3%80%90python3webspider03%E3%80%91%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Sven">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sven's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          【Python3WebSpider03】正则表达式
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-08-10 15:58:46" itemprop="dateCreated datePublished" datetime="2020-08-10T15:58:46+00:00">2020-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-01-03 04:48:39" itemprop="dateModified" datetime="2023-01-03T04:48:39+00:00">2023-01-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/skills/" itemprop="url" rel="index"><span itemprop="name">skills</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>7.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>7 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="正则表达式"><a href="#正则表达式" class="headerlink" title="正则表达式"></a>正则表达式</h1><p>正则表达式是处理字符串的强大工具，它有自己特定的语法结构，可以实现字符串的检索、替换、匹配认证，是爬虫学习中必不可少的一个工具</p>
+<span id="more"></span>
+<h3 id="常用匹配规则"><a href="#常用匹配规则" class="headerlink" title="常用匹配规则"></a>常用匹配规则</h3><p>模式</p>
+<p>描述</p>
+<p><code>w</code></p>
+<p>匹配字母、数字及下划线</p>
+<p><code>W</code></p>
+<p>匹配不是字母、数字及下划线的字符</p>
+<p><code>s</code></p>
+<p>匹配任意空白字符，等价于<code>[tnrf]</code></p>
+<p><code>S</code></p>
+<p>匹配任意非空字符</p>
+<p><code>d</code></p>
+<p>匹配任意数字，等价于<code>[0-9]</code></p>
+<p><code>D</code></p>
+<p>匹配任意非数字的字符</p>
+<p><code>A</code></p>
+<p>匹配字符串开头</p>
+<p><code>Z</code></p>
+<p>匹配字符串结尾，如果存在换行，只匹配换行前的结束字符串</p>
+<p><code>z</code></p>
+<p>匹配字符串结尾，如果存在换行，同时还会匹配换行符</p>
+<p><code>G</code></p>
+<p>匹配最后匹配完成的位置</p>
+<p><code>n</code></p>
+<p>匹配一个换行符</p>
+<p><code>t</code></p>
+<p>匹配一个制表符</p>
+<p><code>^</code></p>
+<p>匹配一行字符串的开头</p>
+<p><code>$</code></p>
+<p>匹配一行字符串的结尾</p>
+<p><code>.</code></p>
+<p>匹配任意字符，除了换行符，当<code>re.DOTALL</code>标记被指定时，则可以匹配包括换行符的任意字符</p>
+<p><code>[...]</code></p>
+<p>用来表示一组字符，单独列出，比如<code>[amk]</code>匹配a、m或k</p>
+<p><code>[^...]</code></p>
+<p>不在<code>[]</code>中的字符，比如<code>[^abc]</code>匹配除了<code>a</code>、<code>b</code>、<code>c</code>之外的字符</p>
+<p><code>*</code></p>
+<p>匹配0个或多个表达式</p>
+<p><code>+</code></p>
+<p>匹配1个或多个表达式</p>
+<p><code>?</code></p>
+<p>匹配0个或1个前面的正则表达式定义的片段，非贪婪方式</p>
+<p><code>&#123;n&#125;</code></p>
+<p>精确匹配n个前面的表达式</p>
+<p><code>&#123;n,m&#125;</code></p>
+<p>匹配n到m次由前面正则表达式定义的片段，贪婪方式</p>
+<p><code>ab</code></p>
+<p>匹配a或b</p>
+<p><code>()</code></p>
+<p>匹配括号内的表达式，也表示一个组</p>
+<h3 id="方法介绍"><a href="#方法介绍" class="headerlink" title="方法介绍"></a>方法介绍</h3><h4 id="match"><a href="#match" class="headerlink" title="match()"></a><code>match()</code></h4><p><code>match()</code>是常见的匹配方法，向 <code>match()</code>传入要匹配的字符串以及正则表达式，就可以检测这个正则表达式是否匹配字符串 <code>match()</code>方法会尝试从字符串的起始位置匹配政策表达式，如果匹配，就返回匹配成功的结果；如果不匹配，就返回<code>None</code>。 示例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">content = <span class="string">&#x27;Hello 123 4567 World_This is a Regex Demo&#x27;</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">len</span>(content))</span><br><span class="line">result = re.<span class="keyword">match</span>(<span class="string">&#x27;^Hellosdddsd&#123;4&#125;sw&#123;10&#125;&#x27;</span>, content)</span><br><span class="line"><span class="built_in">print</span>(result)</span><br><span class="line"><span class="built_in">print</span>(result.group())</span><br><span class="line"><span class="built_in">print</span>(result.span())</span><br></pre></td></tr></table></figure>
+
+<p>运行结果： <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/10/vN6Hd2jcyTPsfSo.jpg"><img src="https://i.loli.net/2020/08/10/vN6Hd2jcyTPsfSo.jpg"></a></p>
+<h5 id="匹配目标"><a href="#匹配目标" class="headerlink" title="匹配目标"></a>匹配目标</h5><p>上面例子是匹配得到字符串内容，如果想从字符串中提取一部分内容可以使用如下方法 可以使用()括号将想提取的子字符串括起来。()实际上标记了一个子表达式的开始和结束位置，被标记的每个子表达式会依次对应每一个分组，调用group()方法传入分组的索引即可获取提取的结果</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">content = <span class="string">&#x27;Hello 1234567 World_This is a Regex Demo&#x27;</span></span><br><span class="line">result = re.<span class="keyword">match</span>(<span class="string">&#x27;^Hellos(d+)sWorld&#x27;</span>, content)</span><br><span class="line"><span class="built_in">print</span>(result)</span><br><span class="line"><span class="built_in">print</span>(result.group())</span><br><span class="line"><span class="built_in">print</span>(result.group(<span class="number">1</span>))</span><br><span class="line"><span class="built_in">print</span>(result.span())</span><br></pre></td></tr></table></figure>
+
+<p>运行结果 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/13/U2DACisTvJwIgyP.jpg"><img src="https://i.loli.net/2020/08/13/U2DACisTvJwIgyP.jpg"></a> 假如正则表达式后面还有()包括的内容，那么可以依次用group(2)、group(3)等来获取。</p>
+<h5 id="通用匹配"><a href="#通用匹配" class="headerlink" title="通用匹配"></a>通用匹配</h5><p>上面匹配工作量非常大，可以使用<code>.*</code>匹配任意字符。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">content = <span class="string">&#x27;Hello 123 4567 World_This is a Regex Demo&#x27;</span></span><br><span class="line">result = re.<span class="keyword">match</span>(<span class="string">&#x27;^Hello.*Demo$&#x27;</span>, content)</span><br><span class="line"><span class="built_in">print</span>(result)</span><br><span class="line"><span class="built_in">print</span>(result.group())</span><br><span class="line"><span class="built_in">print</span>(result.span())</span><br></pre></td></tr></table></figure>
+
+<p>运行结果 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/13/23KQNOtCkAJSon5.jpg"><img src="https://i.loli.net/2020/08/13/23KQNOtCkAJSon5.jpg"></a></p>
+<h5 id="贪婪和非贪婪"><a href="#贪婪和非贪婪" class="headerlink" title="贪婪和非贪婪"></a>贪婪和非贪婪</h5><p>使用通用匹配有时候得等到的结果可能不是我们想要的结果：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">content = <span class="string">&#x27;Hello 1234567 World_This is a Regex Demo&#x27;</span></span><br><span class="line">result = re.<span class="keyword">match</span>(<span class="string">&#x27;^He.*(d+).*Demo$&#x27;</span>, content)</span><br><span class="line"><span class="built_in">print</span>(result)</span><br><span class="line"><span class="built_in">print</span>(result.group(<span class="number">1</span>))</span><br></pre></td></tr></table></figure>
+
+<p>结果 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/13/jsMemxtwiG697uf.jpg"><img src="https://i.loli.net/2020/08/13/jsMemxtwiG697uf.jpg"></a> 这里得到数字只有 7，而不是<code>1234567</code>,这里涉及到贪婪匹配和非贪婪匹配的问题，<code>.*</code>会匹配尽可能多的字符，正则表达式中<code>.*</code>后面是<code>d+</code>，也就是至少一个数字，并没有指定具体多少个数字，因此，<code>.*</code>就尽可能匹配多的字符，这里就把<code>123456</code>匹配了，给<code>d+</code>留下一个可满足条件的数字<code>7</code>，最后得到的内容就只有数字<code>7</code>了。这里就需要使用非贪婪模式<code>.*?</code>匹配</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">content = <span class="string">&#x27;Hello 1234567 World_This is a Regex Demo&#x27;</span></span><br><span class="line">result = re.<span class="keyword">match</span>(<span class="string">&#x27;^He.*?(d+).*Demo$&#x27;</span>, content)</span><br><span class="line"><span class="built_in">print</span>(result)</span><br><span class="line"><span class="built_in">print</span>(result.group(<span class="number">1</span>))</span><br></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/13/XNxERJFauW36vif.jpg"><img src="https://i.loli.net/2020/08/13/XNxERJFauW36vif.jpg"></a> 贪婪匹配是尽可能匹配多的字符，非贪婪匹配就是尽可能匹配少的字符。当<code>.*?</code>匹配到<code>Hello</code>后面的空白字符时，再往后的字符就是数字了，而<code>d+</code>恰好可以匹配，那么这里<code>.*?</code>就不再进行匹配，交给<code>d+</code>去匹配后面的数字。所以这样<code>.*?</code>匹配了尽可能少的字符，<code>d+</code>的结果就是<code>1234567</code>了。</p>
+<h5 id="修饰符"><a href="#修饰符" class="headerlink" title="修饰符"></a>修饰符</h5><p>正则表达式可以包含一些可选标志修饰符来控制匹配的模式。修饰符被指定为一个可选的标志。 在字符串中加入换行符之后</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">content = <span class="string">&#x27;&#x27;&#x27;Hello 1234567 World_This</span></span><br><span class="line"><span class="string">is a Regex Demo</span></span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line">result = re.<span class="keyword">match</span>(<span class="string">&#x27;^He.*?(\d+).*?Demo$&#x27;</span>, content)</span><br><span class="line"><span class="built_in">print</span>(result.group(<span class="number">1</span>))</span><br></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/13/QrtGAR1vzPcae3N.jpg"><img src="https://i.loli.net/2020/08/13/QrtGAR1vzPcae3N.jpg"></a> 运行直接报错，因为<code>\.</code>匹配的是除换行符之外的任意字符，当遇到换行符时，<code>.*?</code>就不能用，这里需要加个修饰符<code>re.S</code>修正这个错误</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">result = re.<span class="keyword">match</span>(<span class="string">&#x27;^He.*?(\d+).*?Demo$&#x27;</span>, content, re.S)</span><br></pre></td></tr></table></figure>
+
+<p>这个修饰符的作用是使.匹配包括换行符在内的所有字符。 在网页匹配中经常要用到这个修饰符，因为 html 节点经常会有换行。除了这个修饰符，还有其它修饰符</p>
+<p>修饰符</p>
+<p>描述</p>
+<p><code>re.I</code></p>
+<p>使匹配对大小写不敏感</p>
+<p><code>re.L</code></p>
+<p>做本地化识别（<code>locale-aware</code>）匹配</p>
+<p><code>re.M</code></p>
+<p>多行匹配，影响<code>^</code>和<code>$</code></p>
+<p><code>re.S</code></p>
+<p>使.匹配包括换行在内的所有字符</p>
+<p><code>re.U</code></p>
+<p>根据Unicode字符集解析字符。这个标志影响\w、<code>\W</code>、 <code>\b</code>和<code>\B</code></p>
+<p><code>re.X</code></p>
+<p>该标志通过给予你更灵活的格式以便你将正则表达式写得更易于理解</p>
+<h5 id="转义字符"><a href="#转义字符" class="headerlink" title="转义字符"></a>转义字符</h5><p>我们知道正则表达式定义了许多匹配模式，如.匹配除换行符以外的任意字符，但是如果目标字符串里面就包含. 这里就需要用到转义匹配了<code>\</code></p>
+<h4 id="search"><a href="#search" class="headerlink" title="search()"></a><code>search()</code></h4><p><code>match()</code>方法是从字符串开头开始匹配的，一旦开头不匹配，那么整个匹配就失败了。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">content = <span class="string">&#x27;Extra stings Hello 1234567 World_This is a Regex Demo Extra stings&#x27;</span></span><br><span class="line">result = re.<span class="keyword">match</span>(<span class="string">&#x27;Hello.*?(\d+).*?Demo&#x27;</span>, content)</span><br><span class="line"><span class="built_in">print</span>(result.group(<span class="number">1</span>))</span><br></pre></td></tr></table></figure>
+
+<p>运行结果 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/13/DkdmTNpwq8jWOE9.jpg"><img src="https://i.loli.net/2020/08/13/DkdmTNpwq8jWOE9.jpg"></a> 这里返回的是 none，因为<code>match()</code>方法使用时需要考虑开头的内容，这在做匹配时并不方便。它更适合用来检测某个字符串是否符合某个正则表达式的规则。 <code>search()</code>，它在匹配时会扫描整个字符串，然后返回第一个成功匹配的结果。也就是说，正则表达式可以是字符串的一部分，在匹配时，<code>search()</code>方法会依次扫描字符串，直到找到第一个符合规则的字符串，然后返回匹配内容，如果搜索完了还没有找到，就返回<code>None</code>。 我们把上面代码中的<code>match()</code>方法修改成<code>search()</code>，再看下运行结果： <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/13/dSA8gX6RLTpkiGU.jpg"><img src="https://i.loli.net/2020/08/13/dSA8gX6RLTpkiGU.jpg"></a> 因此，为了匹配方便，匹配时可以尽量使用<code>search()</code>方法 使用一个实例看看<code>search()</code>的用法，准备一个待匹配的<code>HTML</code>文档：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">html = &#x27;&#x27;&#x27;&lt;div id=&quot;songs-list&quot;&gt;</span><br><span class="line">    &lt;h2 class=&quot;title&quot;&gt;经典老歌&lt;/h2&gt;</span><br><span class="line">    &lt;p class=&quot;introduction&quot;&gt;</span><br><span class="line">        经典老歌列表</span><br><span class="line">    &lt;/p&gt;</span><br><span class="line">    &lt;ul id=&quot;list&quot; class=&quot;list-group&quot;&gt;</span><br><span class="line">        &lt;li data-view=&quot;2&quot;&gt;一路上有你&lt;/li&gt;</span><br><span class="line">        &lt;li data-view=&quot;7&quot;&gt;</span><br><span class="line">            &lt;a href=&quot;/2.mp3&quot; singer=&quot;任贤齐&quot;&gt;沧海一声笑&lt;/a&gt;</span><br><span class="line">        &lt;/li&gt;</span><br><span class="line">        &lt;li data-view=&quot;4&quot; class=&quot;active&quot;&gt;</span><br><span class="line">            &lt;a href=&quot;/3.mp3&quot; singer=&quot;齐秦&quot;&gt;往事随风&lt;/a&gt;</span><br><span class="line">        &lt;/li&gt;</span><br><span class="line">        &lt;li data-view=&quot;6&quot;&gt;&lt;a href=&quot;/4.mp3&quot; singer=&quot;beyond&quot;&gt;光辉岁月&lt;/a&gt;&lt;/li&gt;</span><br><span class="line">        &lt;li data-view=&quot;5&quot;&gt;&lt;a href=&quot;/5.mp3&quot; singer=&quot;陈慧琳&quot;&gt;记事本&lt;/a&gt;&lt;/li&gt;</span><br><span class="line">        &lt;li data-view=&quot;5&quot;&gt;</span><br><span class="line">            &lt;a href=&quot;/6.mp3&quot; singer=&quot;邓丽君&quot;&gt;&lt;i class=&quot;fa fa-user&quot;&gt;&lt;/i&gt;但愿人长久&lt;/a&gt;</span><br><span class="line">        &lt;/li&gt;</span><br><span class="line">    &lt;/ul&gt;</span><br><span class="line">&lt;/div&gt;&#x27;&#x27;&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>我们尝试提取class为active的li节点内部的超链接包含的歌手名和歌名，此时需要提取第三个li节点下a节点的singer属性和文本。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">html = <span class="string">&#x27;&#x27;&#x27;&lt;div id=&quot;songs-list&quot;&gt;</span></span><br><span class="line"><span class="string">    &lt;h2 class=&quot;title&quot;&gt;经典老歌&lt;/h2&gt;</span></span><br><span class="line"><span class="string">    &lt;p class=&quot;introduction&quot;&gt;</span></span><br><span class="line"><span class="string">        经典老歌列表</span></span><br><span class="line"><span class="string">    &lt;/p&gt;</span></span><br><span class="line"><span class="string">    &lt;ul id=&quot;list&quot; class=&quot;list-group&quot;&gt;</span></span><br><span class="line"><span class="string">        &lt;li data-view=&quot;2&quot;&gt;一路上有你&lt;/li&gt;</span></span><br><span class="line"><span class="string">        &lt;li data-view=&quot;7&quot;&gt;</span></span><br><span class="line"><span class="string">            &lt;a href=&quot;/2.mp3&quot; singer=&quot;任贤齐&quot;&gt;沧海一声笑&lt;/a&gt;</span></span><br><span class="line"><span class="string">        &lt;/li&gt;</span></span><br><span class="line"><span class="string">        &lt;li data-view=&quot;4&quot; class=&quot;active&quot;&gt;</span></span><br><span class="line"><span class="string">            &lt;a href=&quot;/3.mp3&quot; singer=&quot;齐秦&quot;&gt;往事随风&lt;/a&gt;</span></span><br><span class="line"><span class="string">        &lt;/li&gt;</span></span><br><span class="line"><span class="string">        &lt;li data-view=&quot;6&quot;&gt;&lt;a href=&quot;/4.mp3&quot; singer=&quot;beyond&quot;&gt;光辉岁月&lt;/a&gt;&lt;/li&gt;</span></span><br><span class="line"><span class="string">        &lt;li data-view=&quot;5&quot;&gt;&lt;a href=&quot;/5.mp3&quot; singer=&quot;陈慧琳&quot;&gt;记事本&lt;/a&gt;&lt;/li&gt;</span></span><br><span class="line"><span class="string">        &lt;li data-view=&quot;5&quot;&gt;</span></span><br><span class="line"><span class="string">            &lt;a href=&quot;/6.mp3&quot; singer=&quot;邓丽君&quot;&gt;&lt;i class=&quot;fa fa-user&quot;&gt;&lt;/i&gt;但愿人长久&lt;/a&gt;</span></span><br><span class="line"><span class="string">        &lt;/li&gt;</span></span><br><span class="line"><span class="string">    &lt;/ul&gt;</span></span><br><span class="line"><span class="string">&lt;/div&gt;&#x27;&#x27;&#x27;</span></span><br><span class="line">result = re.search(<span class="string">&#x27;&lt;li.*?active.*?singer=&quot;(.*?)&quot;&gt;(.*?)&lt;/a&gt;&#x27;</span>, html, re.S)</span><br><span class="line"><span class="keyword">if</span> result:</span><br><span class="line">    <span class="built_in">print</span>(result.group(<span class="number">1</span>), result.group(<span class="number">2</span>))</span><br></pre></td></tr></table></figure>
+
+<p>结果 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/13/JEr863zZGIfFOuw.jpg"><img src="https://i.loli.net/2020/08/13/JEr863zZGIfFOuw.jpg"></a></p>
+<h5 id="findall"><a href="#findall" class="headerlink" title="findall()"></a><code>findall()</code></h5><p><code>search()</code>方法的用法，可以匹配正则表达式的第一个内容，但是要获取匹配的所有内容得借助<code>findall()</code>方法。 还是上面的 HTML文档，如果想要获取所有 a 节点的超链接、歌手和歌名</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">html = <span class="string">&#x27;&#x27;&#x27;&lt;div id=&quot;songs-list&quot;&gt;</span></span><br><span class="line"><span class="string">    &lt;h2 class=&quot;title&quot;&gt;经典老歌&lt;/h2&gt;</span></span><br><span class="line"><span class="string">    &lt;p class=&quot;introduction&quot;&gt;</span></span><br><span class="line"><span class="string">        经典老歌列表</span></span><br><span class="line"><span class="string">    &lt;/p&gt;</span></span><br><span class="line"><span class="string">    &lt;ul id=&quot;list&quot; class=&quot;list-group&quot;&gt;</span></span><br><span class="line"><span class="string">        &lt;li data-view=&quot;2&quot;&gt;一路上有你&lt;/li&gt;</span></span><br><span class="line"><span class="string">        &lt;li data-view=&quot;7&quot;&gt;</span></span><br><span class="line"><span class="string">            &lt;a href=&quot;/2.mp3&quot; singer=&quot;任贤齐&quot;&gt;沧海一声笑&lt;/a&gt;</span></span><br><span class="line"><span class="string">        &lt;/li&gt;</span></span><br><span class="line"><span class="string">        &lt;li data-view=&quot;4&quot; class=&quot;active&quot;&gt;</span></span><br><span class="line"><span class="string">            &lt;a href=&quot;/3.mp3&quot; singer=&quot;齐秦&quot;&gt;往事随风&lt;/a&gt;</span></span><br><span class="line"><span class="string">        &lt;/li&gt;</span></span><br><span class="line"><span class="string">        &lt;li data-view=&quot;6&quot;&gt;&lt;a href=&quot;/4.mp3&quot; singer=&quot;beyond&quot;&gt;光辉岁月&lt;/a&gt;&lt;/li&gt;</span></span><br><span class="line"><span class="string">        &lt;li data-view=&quot;5&quot;&gt;&lt;a href=&quot;/5.mp3&quot; singer=&quot;陈慧琳&quot;&gt;记事本&lt;/a&gt;&lt;/li&gt;</span></span><br><span class="line"><span class="string">        &lt;li data-view=&quot;5&quot;&gt;</span></span><br><span class="line"><span class="string">            &lt;a href=&quot;/6.mp3&quot; singer=&quot;邓丽君&quot;&gt;&lt;i class=&quot;fa fa-user&quot;&gt;&lt;/i&gt;但愿人长久&lt;/a&gt;</span></span><br><span class="line"><span class="string">        &lt;/li&gt;</span></span><br><span class="line"><span class="string">    &lt;/ul&gt;</span></span><br><span class="line"><span class="string">&lt;/div&gt;&#x27;&#x27;&#x27;</span></span><br><span class="line">results = re.findall(<span class="string">&#x27;&lt;li.*?href=&quot;(.*?)&quot;.*?singer=&quot;(.*?)&quot;&gt;(.*?)&lt;/a&gt;&#x27;</span>, html, re.S)</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">type</span>(results))</span><br><span class="line"><span class="keyword">for</span> result <span class="keyword">in</span> results:</span><br><span class="line">    <span class="built_in">print</span>(result)</span><br><span class="line">    <span class="built_in">print</span>(result[<span class="number">0</span>], result[<span class="number">1</span>], result[<span class="number">2</span>])</span><br></pre></td></tr></table></figure>
+
+<p>运行结果 <a target="_blank" rel="noopener" href="https://i.loli.net/2020/08/13/o4xKuqzslGcpfF8.jpg"><img src="https://i.loli.net/2020/08/13/o4xKuqzslGcpfF8.jpg"></a> 可以看到，返回的列表中的每个元素都是元组类型，我们用对应的索引依次取出即可。 如果只是获取第一个内容，可以用search()方法。当需要提取多个内容时，可以用findall()方法</p>
+<h5 id="sub"><a href="#sub" class="headerlink" title="sub()"></a><code>sub()</code></h5><p>除了使用正则表达式提取信息外，有时候还需要借助它来修改文本。比如，想要把一串文本中的所有数字都去掉，如果只用字符串的replace()方法，那就太烦琐了，这时可以借助sub()方法。示例如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">content = <span class="string">&#x27;54aK54yr5oiR54ix5L2g&#x27;</span></span><br><span class="line">content = re.sub(<span class="string">&#x27;\d+&#x27;</span>, <span class="string">&#x27;&#x27;</span>, content)</span><br><span class="line"><span class="built_in">print</span>(content)</span><br></pre></td></tr></table></figure>
+
+<p>运行结果</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aKyroiRixLg</span><br></pre></td></tr></table></figure>
+
+<h5 id="compile"><a href="#compile" class="headerlink" title="compile()"></a><code>compile()</code></h5><p>前面所讲的方法都是用来处理字符串的方法，最后再介绍一下compile()方法，这个方法可以将正则字符串编译成正则表达式对象，以便在后面的匹配中复用。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">content1 = <span class="string">&#x27;2016-12-15 12:00&#x27;</span></span><br><span class="line">content2 = <span class="string">&#x27;2016-12-17 12:55&#x27;</span></span><br><span class="line">content3 = <span class="string">&#x27;2016-12-22 13:21&#x27;</span></span><br><span class="line">pattern = re.<span class="built_in">compile</span>(<span class="string">&#x27;\d&#123;2&#125;:\d&#123;2&#125;&#x27;</span>)</span><br><span class="line">result1 = re.sub(pattern, <span class="string">&#x27;&#x27;</span>, content1)</span><br><span class="line">result2 = re.sub(pattern, <span class="string">&#x27;&#x27;</span>, content2)</span><br><span class="line">result3 = re.sub(pattern, <span class="string">&#x27;&#x27;</span>, content3)</span><br><span class="line"><span class="built_in">print</span>(result1, result2, result3)</span><br></pre></td></tr></table></figure>
+
+<p>例如，这里有3个日期，我们想分别将3个日期中的时间去掉，这时可以借助sub()方法。该方法的第一个参数是正则表达式，但是这里没有必要重复写3个同样的正则表达式，此时可以借助compile()方法将正则表达式编译成一个正则表达式对象，以便复用。 运行结果如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">2016-12-15  2016-12-17  2016-12-22</span><br></pre></td></tr></table></figure>
+
+<p>另外，compile()还可以传入修饰符，例如re.S等修饰符，这样在search()、findall()等方法中就不需要额外传了。所以，compile()方法可以说是给正则表达式做了一层封装，以便我们更好地复用。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
+              <a href="/tags/%E7%88%AC%E8%99%AB/" rel="tag"><i class="fa fa-tag"></i> 爬虫</a>
+              <a href="/tags/%E6%AD%A3%E5%88%99/" rel="tag"><i class="fa fa-tag"></i> 正则</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/08/06/%E3%80%90python3webspider02%E3%80%91%E7%88%AC%E8%99%AB%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86/" rel="prev" title="【Python3WebSpider02】爬虫基本原理">
+      <i class="fa fa-chevron-left"></i> 【Python3WebSpider02】爬虫基本原理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/08/12/%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83-nginx-%E4%BC%98%E5%8C%96/" rel="next" title="记一次生产环境 nginx 优化">
+      记一次生产环境 nginx 优化 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="nav-number">1.</span> <span class="nav-text">正则表达式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E5%8C%B9%E9%85%8D%E8%A7%84%E5%88%99"><span class="nav-number">1.0.1.</span> <span class="nav-text">常用匹配规则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.0.2.</span> <span class="nav-text">方法介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#match"><span class="nav-number">1.0.2.1.</span> <span class="nav-text">match()</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%8C%B9%E9%85%8D%E7%9B%AE%E6%A0%87"><span class="nav-number">1.0.2.1.1.</span> <span class="nav-text">匹配目标</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%80%9A%E7%94%A8%E5%8C%B9%E9%85%8D"><span class="nav-number">1.0.2.1.2.</span> <span class="nav-text">通用匹配</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%B4%AA%E5%A9%AA%E5%92%8C%E9%9D%9E%E8%B4%AA%E5%A9%AA"><span class="nav-number">1.0.2.1.3.</span> <span class="nav-text">贪婪和非贪婪</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%BF%AE%E9%A5%B0%E7%AC%A6"><span class="nav-number">1.0.2.1.4.</span> <span class="nav-text">修饰符</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%BD%AC%E4%B9%89%E5%AD%97%E7%AC%A6"><span class="nav-number">1.0.2.1.5.</span> <span class="nav-text">转义字符</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#search"><span class="nav-number">1.0.2.2.</span> <span class="nav-text">search()</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#findall"><span class="nav-number">1.0.2.2.1.</span> <span class="nav-text">findall()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#sub"><span class="nav-number">1.0.2.2.2.</span> <span class="nav-text">sub()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#compile"><span class="nav-number">1.0.2.2.3.</span> <span class="nav-text">compile()</span></a></li></ol></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Sven</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">91</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/sven0219" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;sven0219" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hi@svenshen.com" title="E-Mail → mailto:hi@svenshen.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="visitors-count">
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_uv">
+       Visitors :<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_pv">
+       Views : <span id="busuanzi_value_site_pv"></span>
+    </span>
+</div>
+
+<div class="copyright">
+  
+  &copy; 2022 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sven</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">276k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'ffcb8e4e993246f4af3c',
+      clientSecret: '83d999522d8c8f95f55bff4c2040b92858084127',
+      repo        : 'sven0219.github.io',
+      owner       : 'sven0219',
+      admin       : ['sven0219'],
+      id          : '2d57762f9e08a9ac844aae0471670c1e',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

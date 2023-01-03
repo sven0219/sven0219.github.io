@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.52ynn.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":true,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="Linux rsync 实现文件定时同步本文档适用于私有云文件存储方式为本地存储、磁盘挂载 思路：服务器A和B上都安装rsync，其中B服务器上是以服务器模式运行rsync，而A上则以客户端方式运行rsync。这样在web服务器B上运行rsync守护进程，在A上定时运行客户程序来同步服务器B上需要同步的内容。 准备：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="文件定时同步(Linux+windows)">
+<meta property="og:url" content="https://blog.52ynn.top/2020/04/07/rsync-%E6%96%87%E4%BB%B6%E5%AE%9A%E6%97%B6%E5%90%8C%E6%AD%A5/index.html">
+<meta property="og:site_name" content="Sven&#39;s Blog">
+<meta property="og:description" content="Linux rsync 实现文件定时同步本文档适用于私有云文件存储方式为本地存储、磁盘挂载 思路：服务器A和B上都安装rsync，其中B服务器上是以服务器模式运行rsync，而A上则以客户端方式运行rsync。这样在web服务器B上运行rsync守护进程，在A上定时运行客户程序来同步服务器B上需要同步的内容。 准备：">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/Cr3JoVi17mn6Gbp.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/mKeilNRIaJnSuM2.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/UhcvIVFsAxE2BwC.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/9RLraqby2QGZsWK.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/1A6vDs4NU5BX82q.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/iGyYEMPr3HNJCdl.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/snZ1JMjPOIdGwYo.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/G7hqEIgrKmzYVvn.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/IKubUpYxlfmnj3k.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/FUjWXhQRglSmKB3.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/8uYTgHcwMjylq1X.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/YOhM3wnRxFo8UB7.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/PuIL9gwqcUmZYrd.png">
+<meta property="og:image" content="https://i.loli.net/2020/04/08/hE2nrtdO71w9VMA.png">
+<meta property="article:published_time" content="2020-04-07T20:02:28.000Z">
+<meta property="article:modified_time" content="2023-01-03T04:48:39.634Z">
+<meta property="article:author" content="Sven">
+<meta property="article:tag" content="运维">
+<meta property="article:tag" content="windows">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="rsync">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/04/08/Cr3JoVi17mn6Gbp.png">
+
+<link rel="canonical" href="https://blog.52ynn.top/2020/04/07/rsync-%E6%96%87%E4%BB%B6%E5%AE%9A%E6%97%B6%E5%90%8C%E6%AD%A5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>文件定时同步(Linux+windows) | Sven's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Sven's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Do more ,say less !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://blog.52ynn.top/2020/04/07/rsync-%E6%96%87%E4%BB%B6%E5%AE%9A%E6%97%B6%E5%90%8C%E6%AD%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Sven">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sven's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          文件定时同步(Linux+windows)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-04-07 20:02:28" itemprop="dateCreated datePublished" datetime="2020-04-07T20:02:28+00:00">2020-04-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-01-03 04:48:39" itemprop="dateModified" datetime="2023-01-03T04:48:39+00:00">2023-01-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/skills/" itemprop="url" rel="index"><span itemprop="name">skills</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.6k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Linux-rsync-实现文件定时同步"><a href="#Linux-rsync-实现文件定时同步" class="headerlink" title="Linux rsync 实现文件定时同步"></a>Linux rsync 实现文件定时同步</h1><p>本文档适用于私有云文件存储方式为本地存储、磁盘挂载 思路：服务器A和B上都安装rsync，其中B服务器上是以服务器模式运行rsync，而A上则以客户端方式运行rsync。这样在web服务器B上运行rsync守护进程，在A上定时运行客户程序来同步服务器B上需要同步的内容。 准备：</p>
+<span id="more"></span>
+<p>机器</p>
+<p>ip</p>
+<p>目录</p>
+<p>A（源机器）</p>
+<p>192.168.1.146</p>
+<p>文件目录：&#x2F;data</p>
+<p>B（备份机器）</p>
+<p>192.168.1.147</p>
+<p>备份目录：&#x2F;backup</p>
+<h3 id="1-安装-rsync（两台机器都要执行）"><a href="#1-安装-rsync（两台机器都要执行）" class="headerlink" title="1. 安装 rsync（两台机器都要执行）"></a>1. 安装 rsync（两台机器都要执行）</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install rsync</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-配置"><a href="#2-配置" class="headerlink" title="2. 配置"></a>2. 配置</h3><p>rsync的主要有以下三个配置文件rsyncd.conf(主配置文件)、rsyncd.secrets(密码文件)、rsyncd.motd(rysnc服务器信息)</p>
+<h4 id="rsyncd-服务端配置（A-机器配置）"><a href="#rsyncd-服务端配置（A-机器配置）" class="headerlink" title="rsyncd 服务端配置（A 机器配置）"></a>rsyncd 服务端配置（A 机器配置）</h4><p>&#x2F;etc&#x2F;rsyncd&#x2F;rsyncd.conf</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">#/etc/rsyncd/rsyncd.conf 所属用户ID，一般为root</span><br><span class="line">uid =root</span><br><span class="line">#/etc/rsyncd/rsyncd.conf 所属权限组</span><br><span class="line">gid =root</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">use chroot = no   #在传输文件的之前，是否转到用户根目录。</span><br><span class="line">max connections = 4   #最大连接数</span><br><span class="line"></span><br><span class="line">#服务进程pid保存文件</span><br><span class="line">pid file = /var/run/rsyncd.pid </span><br><span class="line">#锁文件路径</span><br><span class="line">lock file = /var/run/rsyncd.lock </span><br><span class="line"></span><br><span class="line">log file = /var/log/rsyncd.log  #日至文件路径</span><br><span class="line"></span><br><span class="line">log format = %t %a %m %f %b</span><br><span class="line"></span><br><span class="line">#要备份的模块名，该名称客户端进行同步时需要调用   </span><br><span class="line">[qysdata] </span><br><span class="line">path = /data   #要备份的目录</span><br><span class="line">ignore errors    #可以忽略一些无关的IO错误</span><br><span class="line"></span><br><span class="line">read only = true  # // 只读</span><br><span class="line">list = false  #//不允许列文件</span><br><span class="line">hosts allow = 192.168.1.147 # 允许访问的 ip</span><br><span class="line">hosts deny = 0.0.0.0/32 # 禁止访问的 ip</span><br><span class="line">#//认证的用户名，如果没有这行则表明是匿名，此用户与系统无关</span><br><span class="line">auth users = qys   </span><br><span class="line">#//密码和用户名对比表，密码文件自己生成</span><br><span class="line">secrets file = /etc/rsyncd/rsyncd.secrets  </span><br><span class="line"></span><br><span class="line">comment = qiyuesuo data backup   #这个模块的注释信息</span><br></pre></td></tr></table></figure>
+
+<p>&#x2F;etc&#x2F;rsyncd&#x2F;rsyncd.secrets 配置rsync密码（在上边的配置文件中已经写好路径,名字随便写，只要和上边配置文件里的一致即可），格式(一行一个用户)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qys:admin#1234</span><br></pre></td></tr></table></figure>
+
+<p>赋予权限</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">chmod 600 /etc/rsyncd/rsyncd.secrets</span><br><span class="line">chmod 600 /etc/rsyncd/rsyncd.conf</span><br></pre></td></tr></table></figure>
+
+<h4 id="客户端配置（B-机器配置）"><a href="#客户端配置（B-机器配置）" class="headerlink" title="客户端配置（B 机器配置）"></a>客户端配置（B 机器配置）</h4><p>配置密码文件（这个密码是rsync请求服务端需要的认证密码） &#x2F;etc&#x2F;rsyncd&#x2F;client.pass</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin#1234</span><br></pre></td></tr></table></figure>
+
+<p>赋予权限</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chmod 600 /etc/rsyncd/client.pass</span><br></pre></td></tr></table></figure>
+
+<h4 id="启动服务（A-机器启动）"><a href="#启动服务（A-机器启动）" class="headerlink" title="启动服务（A 机器启动）"></a>启动服务（A 机器启动）</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rsync --daemon --config=/etc/rsyncd/rsyncd.conf</span><br></pre></td></tr></table></figure>
+
+<p>设置开机自启</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">&quot;rsync --daemon --config=/etc/rsyncd/rsyncd.conf&quot;</span> &gt;&gt;  /etc/rc.local </span><br></pre></td></tr></table></figure>
+
+<h4 id="客户端拉取文件测试（B-服务器执行）"><a href="#客户端拉取文件测试（B-服务器执行）" class="headerlink" title="客户端拉取文件测试（B 服务器执行）"></a>客户端拉取文件测试（B 服务器执行）</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rsync -vzrtopg --progress --delete qys@192.168.1.146::qysdata /backup --password-file=/etc/rsyncd/client.pass</span><br></pre></td></tr></table></figure>
+
+<p>如B服务器上 backup目录有 A 上的文件则同步成功</p>
+<h3 id="3-配置定时同步"><a href="#3-配置定时同步" class="headerlink" title="3. 配置定时同步"></a>3. 配置定时同步</h3><h4 id="定时脚本"><a href="#定时脚本" class="headerlink" title="定时脚本"></a>定时脚本</h4><p>&#x2F;usr&#x2F;local&#x2F;sbin&#x2F;backup.sh 将上述命令写入脚本</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line">rsync -vzrtopg --progress --delete qys@192.168.1.146::qysdata /backup --password-file=/etc/rsyncd/client.pass</span><br></pre></td></tr></table></figure>
+
+<p>添可执行权限</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chmod +x /usr/local/sbin/backup.sh</span><br></pre></td></tr></table></figure>
+
+<h4 id="设置定时任务"><a href="#设置定时任务" class="headerlink" title="设置定时任务"></a>设置定时任务</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">crontab -e</span><br></pre></td></tr></table></figure>
+
+<p>输入</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">*/1 * * * * /usr/local/sbin/backup.sh</span><br></pre></td></tr></table></figure>
+
+<p>以上完成定时每分钟同步一次文件</p>
+<h1 id="Windows-SyncToy-定时同步文件"><a href="#Windows-SyncToy-定时同步文件" class="headerlink" title="Windows SyncToy 定时同步文件"></a>Windows SyncToy 定时同步文件</h1><p>思路：使用微软官方的SyncToy将源机器文件同步至备份机器的共享文件夹 准备</p>
+<p>机器</p>
+<p>ip</p>
+<p>目录</p>
+<p>A（源机器）</p>
+<p>192.168.1.131</p>
+<p>文件目录：D:\data</p>
+<p>B（备份机器）</p>
+<p>192.168.1.130</p>
+<p>备份目录：D:\backup</p>
+<h3 id="1-设置共享文件夹（B-机器上执行）"><a href="#1-设置共享文件夹（B-机器上执行）" class="headerlink" title="1. 设置共享文件夹（B 机器上执行）"></a>1. 设置共享文件夹（B 机器上执行）</h3><p>创建共享文件夹 <img src="https://i.loli.net/2020/04/08/Cr3JoVi17mn6Gbp.png" alt="image.png"> 在 A 机器上测试共享文件夹是否创建成功 <img src="https://i.loli.net/2020/04/08/mKeilNRIaJnSuM2.png" alt="image.png"> 出现以下内容说明 创建成功 <img src="https://i.loli.net/2020/04/08/UhcvIVFsAxE2BwC.png" alt="image.png"></p>
+<h3 id="2-安装-RsyncToy（在-A-机器上安装）"><a href="#2-安装-RsyncToy（在-A-机器上安装）" class="headerlink" title="2. 安装 RsyncToy（在 A 机器上安装）"></a>2. 安装 RsyncToy（在 A 机器上安装）</h3><p>下载地址：<a target="_blank" rel="noopener" href="https://download.microsoft.com/download/6/c/4/6c406239-a648-4e01-833e-2c452deed3b6/SyncToySetupPackage/_v21/_x64.exe">https://download.microsoft.com/download/6/c/4/6c406239-a648-4e01-833e-2c452deed3b6/SyncToySetupPackage\_v21\_x64.exe</a> 双击安装即可，安装好后打开界面如下 <img src="https://i.loli.net/2020/04/08/9RLraqby2QGZsWK.png" alt="image.png"></p>
+<h3 id="3-配置"><a href="#3-配置" class="headerlink" title="3. 配置"></a>3. 配置</h3><p><img src="https://i.loli.net/2020/04/08/1A6vDs4NU5BX82q.png" alt="image.png"> 点击下一步后会有三种模式</p>
+<ul>
+<li><p>Synchronize:新文件和更改过的文件在左右目录中将互相复制，同时，若两个目录中有同样的文件，在其中一个目录有重命名或者删除的，在另一个目录中也将执行同样操作。</p>
+</li>
+<li><p>Echo:以左侧目录为准，左目录中的新文件和更改过的文件将复制到右目录中；同时，若两个目录中有同样的文件，在左目录中有重命名或者删除的，在右目录中也将执行同样操作。</p>
+</li>
+<li><p>Contribute：和Echo的操作类似，是一种更加安全的方式。不执行删除操作，相当于右侧文件夹是左侧的增量备份</p>
+</li>
+</ul>
+<p>这里我们选择第三种模式 <img src="https://i.loli.net/2020/04/08/iGyYEMPr3HNJCdl.png" alt="image.png"> 命名 <img src="https://i.loli.net/2020/04/08/snZ1JMjPOIdGwYo.png" alt="image.png"> 测试是否成功，点击 run 运行 <img src="https://i.loli.net/2020/04/08/G7hqEIgrKmzYVvn.png" alt="image.png"> 在 B 机器上查看，文件同步过来即成功 <img src="https://i.loli.net/2020/04/08/IKubUpYxlfmnj3k.png" alt="image.png"></p>
+<h3 id="4-配置定时计划"><a href="#4-配置定时计划" class="headerlink" title="4. 配置定时计划"></a>4. 配置定时计划</h3><p>在控制面板中找到定时计划程序 <img src="https://i.loli.net/2020/04/08/FUjWXhQRglSmKB3.png" alt="image.png"> 创建任务 <img src="https://i.loli.net/2020/04/08/8uYTgHcwMjylq1X.png" alt="image.png"> 配置基本信息 <img src="https://i.loli.net/2020/04/08/YOhM3wnRxFo8UB7.png" alt="image.png"> 配置触发器 <img src="https://i.loli.net/2020/04/08/PuIL9gwqcUmZYrd.png" alt="image.png"> 配置操作 <img src="https://i.loli.net/2020/04/08/hE2nrtdO71w9VMA.png" alt="image.png"> 输入密码保存即可。 验证是否成功，在 A 机器data 目录新建一个文件等待五分钟左右，看文件是否同步成功。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag"><i class="fa fa-tag"></i> 运维</a>
+              <a href="/tags/windows/" rel="tag"><i class="fa fa-tag"></i> windows</a>
+              <a href="/tags/Linux/" rel="tag"><i class="fa fa-tag"></i> Linux</a>
+              <a href="/tags/rsync/" rel="tag"><i class="fa fa-tag"></i> rsync</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/04/03/nfs%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88/" rel="prev" title="NFS高可用方案">
+      <i class="fa fa-chevron-left"></i> NFS高可用方案
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/04/15/cisco%E9%9D%A2%E8%AF%95%E8%AE%B0%E5%BD%95/" rel="next" title="cisco面试记录">
+      cisco面试记录 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Linux-rsync-%E5%AE%9E%E7%8E%B0%E6%96%87%E4%BB%B6%E5%AE%9A%E6%97%B6%E5%90%8C%E6%AD%A5"><span class="nav-number">1.</span> <span class="nav-text">Linux rsync 实现文件定时同步</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%AE%89%E8%A3%85-rsync%EF%BC%88%E4%B8%A4%E5%8F%B0%E6%9C%BA%E5%99%A8%E9%83%BD%E8%A6%81%E6%89%A7%E8%A1%8C%EF%BC%89"><span class="nav-number">1.0.1.</span> <span class="nav-text">1. 安装 rsync（两台机器都要执行）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E9%85%8D%E7%BD%AE"><span class="nav-number">1.0.2.</span> <span class="nav-text">2. 配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#rsyncd-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E9%85%8D%E7%BD%AE%EF%BC%88A-%E6%9C%BA%E5%99%A8%E9%85%8D%E7%BD%AE%EF%BC%89"><span class="nav-number">1.0.2.1.</span> <span class="nav-text">rsyncd 服务端配置（A 机器配置）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%A2%E6%88%B7%E7%AB%AF%E9%85%8D%E7%BD%AE%EF%BC%88B-%E6%9C%BA%E5%99%A8%E9%85%8D%E7%BD%AE%EF%BC%89"><span class="nav-number">1.0.2.2.</span> <span class="nav-text">客户端配置（B 机器配置）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E6%9C%8D%E5%8A%A1%EF%BC%88A-%E6%9C%BA%E5%99%A8%E5%90%AF%E5%8A%A8%EF%BC%89"><span class="nav-number">1.0.2.3.</span> <span class="nav-text">启动服务（A 机器启动）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%8B%89%E5%8F%96%E6%96%87%E4%BB%B6%E6%B5%8B%E8%AF%95%EF%BC%88B-%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%89%A7%E8%A1%8C%EF%BC%89"><span class="nav-number">1.0.2.4.</span> <span class="nav-text">客户端拉取文件测试（B 服务器执行）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E9%85%8D%E7%BD%AE%E5%AE%9A%E6%97%B6%E5%90%8C%E6%AD%A5"><span class="nav-number">1.0.3.</span> <span class="nav-text">3. 配置定时同步</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9A%E6%97%B6%E8%84%9A%E6%9C%AC"><span class="nav-number">1.0.3.1.</span> <span class="nav-text">定时脚本</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1"><span class="nav-number">1.0.3.2.</span> <span class="nav-text">设置定时任务</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Windows-SyncToy-%E5%AE%9A%E6%97%B6%E5%90%8C%E6%AD%A5%E6%96%87%E4%BB%B6"><span class="nav-number">2.</span> <span class="nav-text">Windows SyncToy 定时同步文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E8%AE%BE%E7%BD%AE%E5%85%B1%E4%BA%AB%E6%96%87%E4%BB%B6%E5%A4%B9%EF%BC%88B-%E6%9C%BA%E5%99%A8%E4%B8%8A%E6%89%A7%E8%A1%8C%EF%BC%89"><span class="nav-number">2.0.1.</span> <span class="nav-text">1. 设置共享文件夹（B 机器上执行）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%AE%89%E8%A3%85-RsyncToy%EF%BC%88%E5%9C%A8-A-%E6%9C%BA%E5%99%A8%E4%B8%8A%E5%AE%89%E8%A3%85%EF%BC%89"><span class="nav-number">2.0.2.</span> <span class="nav-text">2. 安装 RsyncToy（在 A 机器上安装）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E9%85%8D%E7%BD%AE"><span class="nav-number">2.0.3.</span> <span class="nav-text">3. 配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E9%85%8D%E7%BD%AE%E5%AE%9A%E6%97%B6%E8%AE%A1%E5%88%92"><span class="nav-number">2.0.4.</span> <span class="nav-text">4. 配置定时计划</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Sven</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">91</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/sven0219" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;sven0219" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hi@svenshen.com" title="E-Mail → mailto:hi@svenshen.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="visitors-count">
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_uv">
+       Visitors :<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_pv">
+       Views : <span id="busuanzi_value_site_pv"></span>
+    </span>
+</div>
+
+<div class="copyright">
+  
+  &copy; 2022 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sven</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">276k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'ffcb8e4e993246f4af3c',
+      clientSecret: '83d999522d8c8f95f55bff4c2040b92858084127',
+      repo        : 'sven0219.github.io',
+      owner       : 'sven0219',
+      admin       : ['sven0219'],
+      id          : 'c3c71d00004fcaa3dae9005953365ebf',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

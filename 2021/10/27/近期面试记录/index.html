@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.52ynn.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":true,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="B 站资深运维开发 一面 电话面试 2021-10-26 挂">
+<meta property="og:type" content="article">
+<meta property="og:title" content="近期面试记录">
+<meta property="og:url" content="https://blog.52ynn.top/2021/10/27/%E8%BF%91%E6%9C%9F%E9%9D%A2%E8%AF%95%E8%AE%B0%E5%BD%95/index.html">
+<meta property="og:site_name" content="Sven&#39;s Blog">
+<meta property="og:description" content="B 站资深运维开发 一面 电话面试 2021-10-26 挂">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://www.52ynn.top/wp-content/uploads/2020/05/2cc01a9550b0ff2f145a3f1c80db1029-300x300.png">
+<meta property="og:image" content="https://i.loli.net/2021/10/27/8PMkeAjWaQJvOdq.jpg">
+<meta property="og:image" content="https://i.loli.net/2021/10/27/iXpkAusL4H8GqbI.jpg">
+<meta property="og:image" content="https://i.loli.net/2021/10/27/nCpThESXuzwrogV.jpg">
+<meta property="article:published_time" content="2021-10-27T14:23:37.000Z">
+<meta property="article:modified_time" content="2023-01-03T04:48:39.638Z">
+<meta property="article:author" content="Sven">
+<meta property="article:tag" content="面试">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.52ynn.top/wp-content/uploads/2020/05/2cc01a9550b0ff2f145a3f1c80db1029-300x300.png">
+
+<link rel="canonical" href="https://blog.52ynn.top/2021/10/27/%E8%BF%91%E6%9C%9F%E9%9D%A2%E8%AF%95%E8%AE%B0%E5%BD%95/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>近期面试记录 | Sven's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Sven's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Do more ,say less !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://blog.52ynn.top/2021/10/27/%E8%BF%91%E6%9C%9F%E9%9D%A2%E8%AF%95%E8%AE%B0%E5%BD%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Sven">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sven's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          近期面试记录
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-10-27 14:23:37" itemprop="dateCreated datePublished" datetime="2021-10-27T14:23:37+00:00">2021-10-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-01-03 04:48:39" itemprop="dateModified" datetime="2023-01-03T04:48:39+00:00">2023-01-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Essay/" itemprop="url" rel="index"><span itemprop="name">Essay</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.7k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="B-站资深运维开发"><a href="#B-站资深运维开发" class="headerlink" title="B 站资深运维开发"></a>B 站资深运维开发</h1><p><img src="https://www.52ynn.top/wp-content/uploads/2020/05/2cc01a9550b0ff2f145a3f1c80db1029-300x300.png"></p>
+<h2 id="一面-电话面试-2021-10-26-挂"><a href="#一面-电话面试-2021-10-26-挂" class="headerlink" title="一面 电话面试 2021-10-26 挂"></a>一面 电话面试 2021-10-26 挂</h2><span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">自我介绍</span><br><span class="line"></span><br><span class="line">1. Python 可变函数和不可变函数</span><br><span class="line">https://www.cnblogs.com/blackmatrix/p/5614086.html</span><br><span class="line">2. Python 判断回文</span><br><span class="line">https://blog.csdn.net/geerniya/article/details/77489355</span><br><span class="line">3. ansible 基于什么协议</span><br><span class="line">ssh</span><br><span class="line">4. 输入一个域名做了哪些事情</span><br><span class="line"></span><br><span class="line"> 输入地址</span><br><span class="line"> 浏览器查找域名的 IP 地址</span><br><span class="line"> 浏览器向 web 服务器发送一个 HTTP 请求</span><br><span class="line"> 服务器的永久重定向响应</span><br><span class="line"> 服务器处理请求</span><br><span class="line"> 服务器返回一个 HTTP 响应</span><br><span class="line"> 浏览器显示 HTML</span><br><span class="line"> 浏览器发送请求获取嵌入在 HTML 中的资源（如图片、音频、视频、CSS、JS等等）</span><br><span class="line"></span><br><span class="line">5. http 是无状态还是有状态</span><br><span class="line">HTTP 是一个属于应用层的面向对象的协议，HTTP 协议一共有五大特点：1、支持客户/服务器模式；2、简单快速；3、灵活；4、无连接；5、无状态。</span><br><span class="line">三次握手，四次挥手</span><br><span class="line">怎么保证安全：https://segmentfault.com/a/1190000022950463</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">6. mysql 主从复制原理</span><br><span class="line">https://www.cnblogs.com/rickiyang/p/13856388.html</span><br><span class="line"></span><br><span class="line">7. linux 服务： nfs  ftp 这些</span><br><span class="line">8. lnmp</span><br><span class="line">9. shell 怎么杀死资源占用率高的服务</span><br><span class="line">https://blog.csdn.net/hpf247/article/details/104915668</span><br><span class="line">10. linux 大日志如何做切割</span><br><span class="line">https://blog.csdn.net/soslinken/article/details/87626655</span><br><span class="line">11. gitlab 问题排查</span><br><span class="line">网络，日志等</span><br><span class="line">12. k8s 核心组件，有没有实际部署过</span><br><span class="line"> etcd 保存了整个集群的状态；</span><br><span class="line"> apiserver 提供了资源操作的唯一入口，并提供认证、授权、访问控制、API 注册和发现等机制；</span><br><span class="line"> controller manager 负责维护集群的状态，比如故障检测、自动扩展、滚动更新等；</span><br><span class="line"> scheduler 负责资源的调度，按照预定的调度策略将 Pod 调度到相应的机器上；</span><br><span class="line"> kubelet 负责维护容器的生命周期，同时也负责 Volume（CVI）和网络（CNI）的管理；</span><br><span class="line"> Container runtime 负责镜像管理以及 Pod 和容器的真正运行（CRI）；</span><br><span class="line"> kube-proxy 负责为 Service 提供 cluster 内部的服务发现和负载均衡</span><br><span class="line">13. 怎么保证服务的稳定性（部分调用失败问题）</span><br><span class="line">https://segmentfault.com/a/1190000039979748</span><br><span class="line">14. cdn 为什么快，可以缓存哪些东西，包括接口吗</span><br><span class="line">https://www.zhihu.com/question/36514327</span><br><span class="line">15. pod ip 漂移怎么办</span><br><span class="line">service作为服务发现，不存在找不到服务的原因</span><br><span class="line">16. Jenkins 扩容，集群</span><br><span class="line">https://www.cnblogs.com/stulzq/p/9297260.html</span><br><span class="line">17. Jenkins 流水线编排</span><br><span class="line">https://www.jenkins.io/zh/doc/tutorials/build-a-multibranch-pipeline-project/</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h1 id="声网-高级-SRE-工程师-2021-10-26"><a href="#声网-高级-SRE-工程师-2021-10-26" class="headerlink" title="声网 高级 SRE 工程师 2021-10-26"></a>声网 高级 SRE 工程师 2021-10-26</h1><p><a target="_blank" rel="noopener" href="https://i.loli.net/2021/10/27/8PMkeAjWaQJvOdq.jpg"><img src="https://i.loli.net/2021/10/27/8PMkeAjWaQJvOdq.jpg"></a></p>
+<h2 id="笔试"><a href="#笔试" class="headerlink" title="笔试"></a>笔试</h2><p><a target="_blank" rel="noopener" href="https://i.loli.net/2021/10/27/iXpkAusL4H8GqbI.jpg"><img src="https://i.loli.net/2021/10/27/iXpkAusL4H8GqbI.jpg"></a></p>
+<h2 id="一面-二面-视频-2021-11-02"><a href="#一面-二面-视频-2021-11-02" class="headerlink" title="一面 二面 视频 2021-11-02"></a>一面 二面 视频 2021-11-02</h2><p>整整两个小时,实在记不住问了多少了 反正就是问各种项目,基础知识这些玩意 等后续</p>
+<h1 id="快手-高级运维开发工程师-2021-10-27-挂"><a href="#快手-高级运维开发工程师-2021-10-27-挂" class="headerlink" title="快手 高级运维开发工程师 2021-10-27 挂"></a>快手 高级运维开发工程师 2021-10-27 挂</h1><p><a target="_blank" rel="noopener" href="https://i.loli.net/2021/10/27/nCpThESXuzwrogV.jpg"><img src="https://i.loli.net/2021/10/27/nCpThESXuzwrogV.jpg"></a></p>
+<h2 id="一面-视频面试"><a href="#一面-视频面试" class="headerlink" title="一面 视频面试"></a>一面 视频面试</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">1. 大文件日志用logstash 是多个低配置还是少量高配置</span><br><span class="line">2. CDN 文件丢失怎么办</span><br><span class="line">https://support.huaweicloud.com/cdn_faq/cdn_01_0008.html</span><br><span class="line">3. 如果有个用户卡怎么排查</span><br><span class="line">https://zhuanlan.zhihu.com/p/101620459</span><br><span class="line">4. 联邦集群是什么，什么用途</span><br><span class="line">https://jimmysong.io/kubernetes-handbook/practice/federation.html</span><br><span class="line">5. redis 和 mq 有什么区别</span><br><span class="line">https://www.cnblogs.com/dengguangxue/p/11537466.html</span><br><span class="line">6. k8s 和docker 什么关系</span><br><span class="line">https://zhuanlan.zhihu.com/p/87186261</span><br><span class="line">7. proc 目录里面存储的是什么</span><br><span class="line">https://zhuanlan.zhihu.com/p/26923061</span><br><span class="line">8. logstash 怎么处理非 json 的日志</span><br><span class="line">https://blog.csdn.net/jiao_fuyou/article/details/49174269</span><br><span class="line">9. 内存、cpu、io、磁盘的命令</span><br><span class="line">https://www.cnblogs.com/lzghyh/p/13035675.html</span><br><span class="line">10. 怎么样才能做好运维</span><br><span class="line">11. mysql 从哪些方面去排查 cpu 占用高的原因</span><br><span class="line">https://www.cnblogs.com/zh94/p/12019333.html</span><br><span class="line">12. k8s master 节点有哪些核心组件</span><br><span class="line">13. ingress 的网络模式</span><br><span class="line">https://kubernetes.io/zh/docs/concepts/services-networking/ingress/</span><br><span class="line">14. 容器化迁移是怎么做的</span><br><span class="line">15. 怎么判断一个进程是不是僵尸进程，怎么找到</span><br><span class="line">https://blog.csdn.net/shanzhizi/article/details/47320595</span><br><span class="line">16. 怎么判断内存溢出 </span><br><span class="line">https://blog.csdn.net/xiaofei0859/article/details/77446579</span><br><span class="line">17. mysql 造成死锁的原因</span><br><span class="line">https://www.modb.pro/db/33477</span><br><span class="line">18. 说下自己的两个项目，以及其中遇到的问题</span><br></pre></td></tr></table></figure>
+
+<h1 id="翼方健数-运维开发工程师-2021-10-28-挂"><a href="#翼方健数-运维开发工程师-2021-10-28-挂" class="headerlink" title="翼方健数 运维开发工程师 2021-10-28 挂"></a>翼方健数 运维开发工程师 2021-10-28 挂</h1><ol>
+<li>dockerfile 中 add 和 copy 的区别<ol start="2">
+<li>怎么部署有状态应用</li>
+</ol>
+</li>
+<li>ELK 包括哪些<ol start="4">
+<li>k8s 是怎么进行资源调度的</li>
+<li>Deployment pod container 是什么关系</li>
+<li>service 怎么暴露端口到外部</li>
+<li>项目中遇到的问题以及解决方案</li>
+</ol>
+</li>
+</ol>
+<h1 id="心动网络-系统运维工程师-2021-11-10"><a href="#心动网络-系统运维工程师-2021-11-10" class="headerlink" title="心动网络 系统运维工程师 2021-11-10"></a>心动网络 系统运维工程师 2021-11-10</h1><h1 id="平安产险"><a href="#平安产险" class="headerlink" title="平安产险"></a>平安产险</h1>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E9%9D%A2%E8%AF%95/" rel="tag"><i class="fa fa-tag"></i> 面试</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/10/21/%E4%BB%8E%E9%9B%B6%E5%88%B0%E4%B8%80%E6%90%AD%E5%BB%BA%E5%9F%BA%E4%BA%8Ekubernetes%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E6%9E%84%E5%BB%BA%E5%B9%B3%E5%8F%B0/" rel="prev" title="从零到一搭建基于kubernetes的分布式构建平台">
+      <i class="fa fa-chevron-left"></i> 从零到一搭建基于kubernetes的分布式构建平台
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/12/13/2021%E4%B8%AA%E4%BA%BA%E5%B9%B4%E7%BB%88%E6%80%BB%E7%BB%93/" rel="next" title="2021个人年终总结">
+      2021个人年终总结 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#B-%E7%AB%99%E8%B5%84%E6%B7%B1%E8%BF%90%E7%BB%B4%E5%BC%80%E5%8F%91"><span class="nav-number">1.</span> <span class="nav-text">B 站资深运维开发</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E9%9D%A2-%E7%94%B5%E8%AF%9D%E9%9D%A2%E8%AF%95-2021-10-26-%E6%8C%82"><span class="nav-number">1.1.</span> <span class="nav-text">一面 电话面试 2021-10-26 挂</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%A3%B0%E7%BD%91-%E9%AB%98%E7%BA%A7-SRE-%E5%B7%A5%E7%A8%8B%E5%B8%88-2021-10-26"><span class="nav-number">2.</span> <span class="nav-text">声网 高级 SRE 工程师 2021-10-26</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%94%E8%AF%95"><span class="nav-number">2.1.</span> <span class="nav-text">笔试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E9%9D%A2-%E4%BA%8C%E9%9D%A2-%E8%A7%86%E9%A2%91-2021-11-02"><span class="nav-number">2.2.</span> <span class="nav-text">一面 二面 视频 2021-11-02</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BF%AB%E6%89%8B-%E9%AB%98%E7%BA%A7%E8%BF%90%E7%BB%B4%E5%BC%80%E5%8F%91%E5%B7%A5%E7%A8%8B%E5%B8%88-2021-10-27-%E6%8C%82"><span class="nav-number">3.</span> <span class="nav-text">快手 高级运维开发工程师 2021-10-27 挂</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E9%9D%A2-%E8%A7%86%E9%A2%91%E9%9D%A2%E8%AF%95"><span class="nav-number">3.1.</span> <span class="nav-text">一面 视频面试</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BF%BC%E6%96%B9%E5%81%A5%E6%95%B0-%E8%BF%90%E7%BB%B4%E5%BC%80%E5%8F%91%E5%B7%A5%E7%A8%8B%E5%B8%88-2021-10-28-%E6%8C%82"><span class="nav-number">4.</span> <span class="nav-text">翼方健数 运维开发工程师 2021-10-28 挂</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BF%83%E5%8A%A8%E7%BD%91%E7%BB%9C-%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%E5%B7%A5%E7%A8%8B%E5%B8%88-2021-11-10"><span class="nav-number">5.</span> <span class="nav-text">心动网络 系统运维工程师 2021-11-10</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B9%B3%E5%AE%89%E4%BA%A7%E9%99%A9"><span class="nav-number">6.</span> <span class="nav-text">平安产险</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Sven</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">91</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/sven0219" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;sven0219" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hi@svenshen.com" title="E-Mail → mailto:hi@svenshen.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="visitors-count">
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_uv">
+       Visitors :<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_pv">
+       Views : <span id="busuanzi_value_site_pv"></span>
+    </span>
+</div>
+
+<div class="copyright">
+  
+  &copy; 2022 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sven</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">276k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'ffcb8e4e993246f4af3c',
+      clientSecret: '83d999522d8c8f95f55bff4c2040b92858084127',
+      repo        : 'sven0219.github.io',
+      owner       : 'sven0219',
+      admin       : ['sven0219'],
+      id          : '1e7266d342a1364d6a0682f86f13c199',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

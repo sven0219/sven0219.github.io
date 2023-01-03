@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.52ynn.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":true,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="MySQL 高可用方案0.介绍Keepalived+mysql双主来实现MySQL-HA，我们必须保证两台MySQL数据库的数据完全一样，基本思路是两台MySQL互为主从关系，通过Keepalived配置虚拟IP，实现当其中的一台MySQL数据库宕机后，应用能够自动切换到另外一台MySQL数据库，保证系统的高可用。 1. 环境准备角色">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL 高可用方案">
+<meta property="og:url" content="https://blog.52ynn.top/2020/03/21/mysql-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88/index.html">
+<meta property="og:site_name" content="Sven&#39;s Blog">
+<meta property="og:description" content="MySQL 高可用方案0.介绍Keepalived+mysql双主来实现MySQL-HA，我们必须保证两台MySQL数据库的数据完全一样，基本思路是两台MySQL互为主从关系，通过Keepalived配置虚拟IP，实现当其中的一台MySQL数据库宕机后，应用能够自动切换到另外一台MySQL数据库，保证系统的高可用。 1. 环境准备角色">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-03-21T13:26:31.000Z">
+<meta property="article:modified_time" content="2023-01-03T04:48:39.634Z">
+<meta property="article:author" content="Sven">
+<meta property="article:tag" content="运维">
+<meta property="article:tag" content="软件安装">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="Linux">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.52ynn.top/2020/03/21/mysql-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>MySQL 高可用方案 | Sven's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Sven's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Do more ,say less !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://blog.52ynn.top/2020/03/21/mysql-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Sven">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sven's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL 高可用方案
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-03-21 13:26:31" itemprop="dateCreated datePublished" datetime="2020-03-21T13:26:31+00:00">2020-03-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-01-03 04:48:39" itemprop="dateModified" datetime="2023-01-03T04:48:39+00:00">2023-01-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/skills/" itemprop="url" rel="index"><span itemprop="name">skills</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>15k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>14 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="MySQL-高可用方案"><a href="#MySQL-高可用方案" class="headerlink" title="MySQL 高可用方案"></a>MySQL 高可用方案</h1><h2 id="0-介绍"><a href="#0-介绍" class="headerlink" title="0.介绍"></a>0.介绍</h2><p>Keepalived+mysql双主来实现MySQL-HA，我们必须保证两台MySQL数据库的数据完全一样，基本思路是两台MySQL互为主从关系，通过Keepalived配置虚拟IP，实现当其中的一台MySQL数据库宕机后，应用能够自动切换到另外一台MySQL数据库，保证系统的高可用。</p>
+<h2 id="1-环境准备"><a href="#1-环境准备" class="headerlink" title="1. 环境准备"></a>1. 环境准备</h2><p>角色</p>
+<span id="more"></span>
+<p>ip</p>
+<p>master1</p>
+<p>192.168.53.199</p>
+<p>master2</p>
+<p>192.168.53.191</p>
+<p>Vip（虚拟 ip）</p>
+<p>192.168.53.100</p>
+<p>关闭服务器防火墙或开启 3306 端口</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 关闭防火墙</span></span><br><span class="line">systemctl stop firewalld</span><br><span class="line">systemctl <span class="built_in">disable</span> firewalld</span><br><span class="line"><span class="comment"># 开启 3306 端口</span></span><br><span class="line">firewalld-cmd --permanent -add-port=3306/tcp</span><br><span class="line">firewall-cmd --reload</span><br></pre></td></tr></table></figure>
+
+<p>安装所需工具</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install wget vim kernel-devel openssl-devel poptdevel  -y</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-在两台机器上分别安装-mysql5-7"><a href="#2-在两台机器上分别安装-mysql5-7" class="headerlink" title="2. 在两台机器上分别安装 mysql5.7"></a>2. 在两台机器上分别安装 mysql5.7</h2><p><strong>两台机器都要执行以下操作</strong> 安装 mysql</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">wget http://dl.qiyuesuo.com/private/mysql/mysql57-community-release-el7-11.noarch.rpm</span><br><span class="line">rpm -Uvh mysql57-community-release-el7-11.noarch.rpm</span><br><span class="line">yum install mysql-community-server</span><br><span class="line"><span class="comment"># 启动服务</span></span><br><span class="line">service mysqld start</span><br></pre></td></tr></table></figure>
+
+<p>查看初始密码</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">grep <span class="string">&#x27;temporary password&#x27;</span> /var/log/mysqld.log</span><br><span class="line"><span class="comment"># 2019-09-17T01:46:58.792184Z 1 [Note] A temporary password is generated for root@localhost: )ecv9hQMVpkO</span></span><br><span class="line"><span class="comment"># 该初始密码为 )ecv9hQMVpkO</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>修改初始密码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mysql -uroot -p</span><br><span class="line"># 输入初始密码 )ecv9hQMVpkO</span><br><span class="line"># 修改初始密码</span><br><span class="line">ALTER USER &#x27;root&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;Admin#1234&#x27;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-配置两台-mysql-主主同步"><a href="#3-配置两台-mysql-主主同步" class="headerlink" title="3. 配置两台 mysql 主主同步"></a>3. 配置两台 mysql 主主同步</h2><p>修改 master1 配置文件如下</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">cat /etc/my.cnf</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">server_id=1</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Disabling symbolic-links is recommended to prevent assorted security risks</span></span><br><span class="line">symbolic-links=0</span><br><span class="line">log-bin=mysql-bin</span><br><span class="line">binlog-format=mixed</span><br><span class="line">relay-log=relay-bin</span><br><span class="line">relay-log-index=slave-relay-bin.index</span><br><span class="line">auto-increment-increment=2</span><br><span class="line">auto-increment-offset=1</span><br><span class="line">log-error=/var/log/mysqld.log</span><br><span class="line">pid-file=/var/run/mysqld/mysqld.pid</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">重启</span></span><br><span class="line">service mysqld restart</span><br></pre></td></tr></table></figure>
+
+<p>修改 master2 配置文件如下</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">cat /etc/my.cnf</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">server_id=2</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Disabling symbolic-links is recommended to prevent assorted security risks</span></span><br><span class="line">symbolic-links=0</span><br><span class="line">log-bin=mysql-bin</span><br><span class="line">binlog-format=mixed</span><br><span class="line">relay-log=relay-bin</span><br><span class="line">relay-log-index=slave-relay-bin.index</span><br><span class="line">auto-increment-increment=2</span><br><span class="line">auto-increment-offset=2</span><br><span class="line">log-error=/var/log/mysqld.log</span><br><span class="line">pid-file=/var/run/mysqld/mysqld.pid</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">重启</span></span><br><span class="line">service mysqld restart</span><br></pre></td></tr></table></figure>
+
+<p>部分解释</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">binlog_format= mixed：指定mysql的binlog日志的格式，mixed是混合模式。</span><br><span class="line"></span><br><span class="line">relay-log：开启中继日志功能</span><br><span class="line"></span><br><span class="line">relay-log-index：中继日志清单</span><br><span class="line"></span><br><span class="line">auto-increment-increment= 2：表示自增长字段每次递增的量，其默认值是1。它的值应设为整个结构中服务器的总数，本案例用到两台服务器，所以值设为2。</span><br><span class="line"></span><br><span class="line">auto-increment-offset= 2：用来设定数据库中自动增长的起点(即初始值)，因为这两能服务器都设定了一次自动增长值2，所以它们的起点必须得不同，这样才能避免两台服务器数据同步时出现主键冲突。</span><br><span class="line"></span><br><span class="line">注：另外还可以在my.cnf配置文件中，添加“binlog_do_db=数据库名”配置项（可以添加多个）来指定要同步的数据库。如果配置了这个配置项，如果没添加在该配置项后面的数据库，则binlog不记录它的事件。</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-1-将-master1-设为-master2-的主服务器"><a href="#3-1-将-master1-设为-master2-的主服务器" class="headerlink" title="3.1 将 master1 设为 master2 的主服务器"></a>3.1 将 master1 设为 master2 的主服务器</h4><p>在 master1 上创建授权账户，允许 master2 主机上连接</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 登陆 mysql</span></span><br><span class="line">mysql -uroot -pAdmin<span class="comment">#1234</span></span><br><span class="line"><span class="comment"># 创建用户</span></span><br><span class="line">mysql&gt; grant replication slave on *.* to <span class="string">&#x27;qiyuesuo_bak&#x27;</span>@<span class="string">&#x27;192.168.53.191&#x27;</span> identified by <span class="string">&quot;Qiyuesuo@2019&quot;</span>;</span><br><span class="line"><span class="comment"># 查看当前 binlog 状态</span></span><br><span class="line">mysql&gt; show master status</span><br><span class="line">    -&gt; ;</span><br><span class="line">+------------------+----------+--------------+------------------+-------------------+</span><br><span class="line"> File              Position  Binlog_Do_DB  Binlog_Ignore_DB  Executed_Gtid_Set </span><br><span class="line">+------------------+----------+--------------+------------------+-------------------+</span><br><span class="line"> mysql-bin.000001       459                                                    </span><br><span class="line">+------------------+----------+--------------+------------------+-------------------+</span><br><span class="line">1 row <span class="keyword">in</span> <span class="built_in">set</span> (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<p>在 master2 上将 master1 设置为自己的主服务器并开启 slave 功能</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 登陆 mysql</span></span><br><span class="line">mysql -uroot -pAdmin<span class="comment">#1234</span></span><br><span class="line"><span class="comment"># 设置</span></span><br><span class="line">mysql&gt; change master to master_host=<span class="string">&#x27;192.168.53.199&#x27;</span>,master_user=<span class="string">&#x27;qiyuesuo_bak&#x27;</span>,master_password=<span class="string">&#x27;Qiyuesuo@2019&#x27;</span>,master_log_file=<span class="string">&#x27;mysql-bin.000001&#x27;</span>,master_log_pos=459;</span><br><span class="line"><span class="comment"># 开启</span></span><br><span class="line">mysql&gt;start slave;</span><br><span class="line"><span class="comment"># 查看状态</span></span><br><span class="line">mysql&gt; Show slave status\G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">               Slave_IO_State: Waiting <span class="keyword">for</span> master to send event</span><br><span class="line">                  Master_Host: 192.168.53.199</span><br><span class="line">                  Master_User: qiyuesuo_bak</span><br><span class="line">                  Master_Port: 3306</span><br><span class="line">                Connect_Retry: 60</span><br><span class="line">              Master_Log_File: mysql-bin.000001</span><br><span class="line">          Read_Master_Log_Pos: 459</span><br><span class="line">               Relay_Log_File: relay-bin.000002</span><br><span class="line">                Relay_Log_Pos: 672</span><br><span class="line">        Relay_Master_Log_File: mysql-bin.000001</span><br><span class="line">             Slave_IO_Running: Yes</span><br><span class="line">            Slave_SQL_Running: Yes</span><br><span class="line">              Replicate_Do_DB: </span><br><span class="line">          Replicate_Ignore_DB: </span><br><span class="line">           Replicate_Do_Table: </span><br><span class="line">       Replicate_Ignore_Table: </span><br><span class="line">      Replicate_Wild_Do_Table: </span><br><span class="line">  Replicate_Wild_Ignore_Table: </span><br><span class="line">                   Last_Errno: 0</span><br><span class="line">                   Last_Error: </span><br><span class="line">                 Skip_Counter: 0</span><br><span class="line">          Exec_Master_Log_Pos: 459</span><br><span class="line">              Relay_Log_Space: 873</span><br><span class="line">              Until_Condition: None</span><br><span class="line">               Until_Log_File: </span><br><span class="line">                Until_Log_Pos: 0</span><br><span class="line">           Master_SSL_Allowed: No</span><br><span class="line">           Master_SSL_CA_File: </span><br><span class="line">           Master_SSL_CA_Path: </span><br><span class="line">              Master_SSL_Cert: </span><br><span class="line">            Master_SSL_Cipher: </span><br><span class="line">               Master_SSL_Key: </span><br><span class="line">        Seconds_Behind_Master: 0</span><br><span class="line">Master_SSL_Verify_Server_Cert: No</span><br><span class="line">                Last_IO_Errno: 0</span><br><span class="line">                Last_IO_Error: </span><br><span class="line">               Last_SQL_Errno: 0</span><br><span class="line">               Last_SQL_Error: </span><br><span class="line">  Replicate_Ignore_Server_Ids: </span><br><span class="line">             Master_Server_Id: 1</span><br><span class="line">                  Master_UUID: 0963db0f-d8ed-11e9-85fd-001c427d374f</span><br><span class="line">             Master_Info_File: /var/lib/mysql/master.info</span><br><span class="line">                    SQL_Delay: 0</span><br><span class="line">          SQL_Remaining_Delay: NULL</span><br><span class="line">      Slave_SQL_Running_State: Slave has <span class="built_in">read</span> all relay <span class="built_in">log</span>; waiting <span class="keyword">for</span> more updates</span><br><span class="line">           Master_Retry_Count: 86400</span><br><span class="line">                  Master_Bind: </span><br><span class="line">      Last_IO_Error_Timestamp: </span><br><span class="line">     Last_SQL_Error_Timestamp: </span><br><span class="line">               Master_SSL_Crl: </span><br><span class="line">           Master_SSL_Crlpath: </span><br><span class="line">           Retrieved_Gtid_Set: </span><br><span class="line">            Executed_Gtid_Set: </span><br><span class="line">                Auto_Position: 0</span><br><span class="line">         Replicate_Rewrite_DB: </span><br><span class="line">                 Channel_Name: </span><br><span class="line">           Master_TLS_Version: </span><br><span class="line">1 row <span class="keyword">in</span> <span class="built_in">set</span> (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-2-将-master2-设为-master1-的主服务器"><a href="#3-2-将-master2-设为-master1-的主服务器" class="headerlink" title="3.2 将 master2 设为 master1 的主服务器"></a>3.2 将 master2 设为 master1 的主服务器</h4><p>在 master2 上创建授权账户，允许 master1 主机上连接</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 登陆 mysql</span></span><br><span class="line">mysql -uroot -pAdmin<span class="comment">#1234</span></span><br><span class="line"><span class="comment"># 创建用户</span></span><br><span class="line">mysql&gt; grant replication slave on *.* to <span class="string">&#x27;qiyuesuo_bak&#x27;</span>@<span class="string">&#x27;192.168.53.199&#x27;</span> identified by <span class="string">&quot;Qiyuesuo@2019&quot;</span>;</span><br><span class="line"><span class="comment"># 查看当前 binlog 状态</span></span><br><span class="line">mysql&gt; show master status;</span><br><span class="line">+------------------+----------+--------------+------------------+-------------------+</span><br><span class="line"> File              Position  Binlog_Do_DB  Binlog_Ignore_DB  Executed_Gtid_Set </span><br><span class="line">+------------------+----------+--------------+------------------+-------------------+</span><br><span class="line"> mysql-bin.000001       459                                                    </span><br><span class="line">+------------------+----------+--------------+------------------+-------------------+</span><br><span class="line">1 row <span class="keyword">in</span> <span class="built_in">set</span> (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<p>在 master1 上将 master2 设置为自己的主服务器并开启 slave 功能</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 登陆 mysql</span></span><br><span class="line">mysql -uroot -pAdmin<span class="comment">#1234</span></span><br><span class="line"><span class="comment"># 设置</span></span><br><span class="line">mysql&gt; change master to master_host=<span class="string">&#x27;192.168.53.191&#x27;</span>,master_user=<span class="string">&#x27;qiyuesuo_bak&#x27;</span>,master_password=<span class="string">&#x27;Qiyuesuo@2019&#x27;</span>,master_log_file=<span class="string">&#x27;mysql-bin.000001&#x27;</span>,master_log_pos=459;</span><br><span class="line"><span class="comment"># 开启</span></span><br><span class="line">mysql&gt; start slave;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"><span class="comment"># 查看状态</span></span><br><span class="line">mysql&gt; show slave status \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">               Slave_IO_State: Waiting <span class="keyword">for</span> master to send event</span><br><span class="line">                  Master_Host: 192.168.53.191</span><br><span class="line">                  Master_User: qiyuesuo_bak</span><br><span class="line">                  Master_Port: 3306</span><br><span class="line">                Connect_Retry: 60</span><br><span class="line">              Master_Log_File: mysql-bin.000001</span><br><span class="line">          Read_Master_Log_Pos: 459</span><br><span class="line">               Relay_Log_File: relay-bin.000002</span><br><span class="line">                Relay_Log_Pos: 320</span><br><span class="line">        Relay_Master_Log_File: mysql-bin.000001</span><br><span class="line">             Slave_IO_Running: Yes</span><br><span class="line">            Slave_SQL_Running: Yes</span><br><span class="line">              Replicate_Do_DB: </span><br><span class="line">          Replicate_Ignore_DB: </span><br><span class="line">           Replicate_Do_Table: </span><br><span class="line">       Replicate_Ignore_Table: </span><br><span class="line">      Replicate_Wild_Do_Table: </span><br><span class="line">  Replicate_Wild_Ignore_Table: </span><br><span class="line">                   Last_Errno: 0</span><br><span class="line">                   Last_Error: </span><br><span class="line">                 Skip_Counter: 0</span><br><span class="line">          Exec_Master_Log_Pos: 459</span><br><span class="line">              Relay_Log_Space: 521</span><br><span class="line">              Until_Condition: None</span><br><span class="line">               Until_Log_File: </span><br><span class="line">                Until_Log_Pos: 0</span><br><span class="line">           Master_SSL_Allowed: No</span><br><span class="line">           Master_SSL_CA_File: </span><br><span class="line">           Master_SSL_CA_Path: </span><br><span class="line">              Master_SSL_Cert: </span><br><span class="line">            Master_SSL_Cipher: </span><br><span class="line">               Master_SSL_Key: </span><br><span class="line">        Seconds_Behind_Master: 0</span><br><span class="line">Master_SSL_Verify_Server_Cert: No</span><br><span class="line">                Last_IO_Errno: 0</span><br><span class="line">                Last_IO_Error: </span><br><span class="line">               Last_SQL_Errno: 0</span><br><span class="line">               Last_SQL_Error: </span><br><span class="line">  Replicate_Ignore_Server_Ids: </span><br><span class="line">             Master_Server_Id: 2</span><br><span class="line">                  Master_UUID: 0524b2b4-d8ed-11e9-8681-001c42223706</span><br><span class="line">             Master_Info_File: /var/lib/mysql/master.info</span><br><span class="line">                    SQL_Delay: 0</span><br><span class="line">          SQL_Remaining_Delay: NULL</span><br><span class="line">      Slave_SQL_Running_State: Slave has <span class="built_in">read</span> all relay <span class="built_in">log</span>; waiting <span class="keyword">for</span> more updates</span><br><span class="line">           Master_Retry_Count: 86400</span><br><span class="line">                  Master_Bind: </span><br><span class="line">      Last_IO_Error_Timestamp: </span><br><span class="line">     Last_SQL_Error_Timestamp: </span><br><span class="line">               Master_SSL_Crl: </span><br><span class="line">           Master_SSL_Crlpath: </span><br><span class="line">           Retrieved_Gtid_Set: </span><br><span class="line">            Executed_Gtid_Set: </span><br><span class="line">                Auto_Position: 0</span><br><span class="line">         Replicate_Rewrite_DB: </span><br><span class="line">                 Channel_Name: </span><br><span class="line">           Master_TLS_Version: </span><br><span class="line">1 row <span class="keyword">in</span> <span class="built_in">set</span> (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-3-测试主主同步"><a href="#3-3-测试主主同步" class="headerlink" title="3.3 测试主主同步"></a>3.3 测试主主同步</h4><p>在 master1 上创建要同步的数据库，并在数据库中创建一张测试表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create database  qiyuesuo_test;</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; use qiyuesuo_test;</span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; create table test(id int primary key  auto_increment,name varchar(20) );</span><br><span class="line">Query OK, 0 rows affected (0.01 sec)</span><br></pre></td></tr></table></figure>
+
+<p>在 master2 上面查看是否同步过来</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show databases;</span><br><span class="line">+--------------------+</span><br><span class="line"> Database           </span><br><span class="line">+--------------------+</span><br><span class="line"> information_schema </span><br><span class="line"> mysql              </span><br><span class="line"> performance_schema </span><br><span class="line"> qiyuesuo_test      </span><br><span class="line"> sys                </span><br><span class="line">+--------------------+</span><br><span class="line">5 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; use qiyuesuo_test;</span><br><span class="line">Reading table information for completion of table and column names</span><br><span class="line">You can turn off this feature to get a quicker startup with -A</span><br><span class="line"></span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">+-------------------------+</span><br><span class="line"> Tables_in_qiyuesuo_test </span><br><span class="line">+-------------------------+</span><br><span class="line"> test                    </span><br><span class="line">+-------------------------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<p>说明 mater2 同步了 msater1 的数据 现在测试 master1 同步 master2，在 master2 中向 test 表插入一条数据</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt;insert into test(name) values(&#x27;zhangsan&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p>在 master1 上查看</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select * from test;</span><br><span class="line">+----+----------+</span><br><span class="line"> id  name     </span><br><span class="line">+----+----------+</span><br><span class="line">  2  zhangsan </span><br><span class="line">+----+----------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<p>以上就完成了 mysql 双主的安装配置，下面进行配置keepalived</p>
+<h2 id="4-keepalived-安装配置"><a href="#4-keepalived-安装配置" class="headerlink" title="4. keepalived 安装配置"></a>4. keepalived 安装配置</h2><h4 id="4-1-介绍"><a href="#4-1-介绍" class="headerlink" title="4.1 介绍"></a>4.1 介绍</h4><blockquote>
+<p>keepalived是集群管理中保证集群高可用的一个软件解决方案，其功能类似于heartbeat，用来防止单点故障 keepalived是以VRRP协议为实现基础的，VRRP全称VirtualRouter Redundancy Protocol，即虚拟路由冗余协议。 虚拟路由冗余协议，可以认为是实现路由器高可用的协议，即将N台提供相同功能的路由器组成一个路由器组，这个组里面有一个master和多个backup，master上面有一个对外提供服务的vip，master会发组播（组播地址为224.0.0.18），当backup收不到vrrp包时就认为master宕掉了，这时就需要根据VRRP的优先级来选举一个backup当master，这样的话就可以保证路由器的高可用了。 keepalived主要有三个模块，分别是core 、check和vrrp。core模块为keepalived的核心，负责主进程的启动、维护以及全局配置文件的加载和解析。check负责健康检查，包括常见的各种检查方式。vrrp模块是来实现VRRP协议的。</p>
+</blockquote>
+<h4 id="4-2-keepalived-安装"><a href="#4-2-keepalived-安装" class="headerlink" title="4.2 keepalived 安装"></a>4.2 keepalived 安装</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install -y keepalived</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-3-keepalived-配置"><a href="#4-3-keepalived-配置" class="headerlink" title="4.3 keepalived 配置"></a>4.3 keepalived 配置</h4><p>在 master1 中配置</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /etc/keepalived/keepalived.conf</span><br><span class="line"></span><br><span class="line">! Configuration File <span class="keyword">for</span> keepalived</span><br><span class="line"></span><br><span class="line">global_defs &#123;</span><br><span class="line">  router_id mysql-1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">   state BACKUP</span><br><span class="line">   interface eth0</span><br><span class="line">   virtual_router_id 51</span><br><span class="line">   priority 100</span><br><span class="line">   advert_int 1</span><br><span class="line">   nopreempt</span><br><span class="line">   authentication &#123;</span><br><span class="line">       auth_type PASS</span><br><span class="line">       auth_pass 1111</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   virtual_ipaddress &#123;</span><br><span class="line"></span><br><span class="line">       192.168.53.100</span><br><span class="line"></span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">virtual_server 192.168.53.100 3306 &#123;</span><br><span class="line"></span><br><span class="line">   delay_loop 2</span><br><span class="line">   lb_algo rr</span><br><span class="line">   lb_kind DR</span><br><span class="line">   persistence_timeout 60</span><br><span class="line">   protocol TCP</span><br><span class="line"></span><br><span class="line">   real_server 192.168.53.199 3306 &#123;</span><br><span class="line">       weight 3</span><br><span class="line">       notify_down    /etc/keepalived/bin/mysql.sh</span><br><span class="line">       TCP_CHECK &#123;</span><br><span class="line">            connect_timeout 3</span><br><span class="line">            nb_get_retry 3</span><br><span class="line">            delay_before_retry 3</span><br><span class="line">            connect_port 3306</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在 master2 中配置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">cat /etc/keepalived/keepalived.conf</span><br><span class="line">! Configuration File for keepalived</span><br><span class="line"></span><br><span class="line">global_defs &#123;</span><br><span class="line">  router_id mysql-2</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">   state BACKUP</span><br><span class="line">   interface eth0</span><br><span class="line">   virtual_router_id 51</span><br><span class="line">   priority 50</span><br><span class="line">   advert_int 1</span><br><span class="line">   authentication &#123;</span><br><span class="line">       auth_type PASS</span><br><span class="line">       auth_pass 1111</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   virtual_ipaddress &#123;</span><br><span class="line"></span><br><span class="line">       192.168.53.100</span><br><span class="line"></span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">virtual_server 192.168.53.100 3306 &#123;</span><br><span class="line"></span><br><span class="line">   delay_loop 2</span><br><span class="line">   lb_algo rr</span><br><span class="line">   lb_kind DR</span><br><span class="line">   persistence_timeout 60</span><br><span class="line">   protocol TCP</span><br><span class="line"></span><br><span class="line">   real_server 192.168.53.191 3306 &#123;</span><br><span class="line">       weight 3</span><br><span class="line">       notify_down    /etc/keepalived/bin/mysql.sh</span><br><span class="line">       TCP_CHECK &#123;</span><br><span class="line">            connect_timeout 3</span><br><span class="line">            nb_get_retry 3</span><br><span class="line">            delay_before_retry 3</span><br><span class="line">            connect_port 3306</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>解释说明</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">! Configuration File <span class="keyword">for</span> keepalived  //注释</span><br><span class="line"></span><br><span class="line">global_defs &#123;</span><br><span class="line">  router_id mysql-1   //表示运行 keepalived 服务器的一个标识</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">   state BACKUP       // 指定角色，两台配置均为 BACKUP，设为 BACKUP 将根据优先级决定主从</span><br><span class="line">   interface eth0     // 指定 HA 检测网络的接口，可使用 ip addr 命令查找</span><br><span class="line">   virtual_router_id 51  // 虚拟路由标识，同一个 vrrp 实例要使用唯一的标识，确保和 master2 相同</span><br><span class="line">   priority 100   //用来选举 master，取值 1-255，此处 master2 设置为 50</span><br><span class="line">   advert_int 1   // 发 vrrp 间隔，即多久进行一次 master 选举</span><br><span class="line">   nopreempt      // 不抢占，即允许一个 priority 比较低的节点作为 master</span><br><span class="line">   authentication &#123;</span><br><span class="line">       auth_type PASS   //认证区域</span><br><span class="line">       auth_pass 1111</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   virtual_ipaddress &#123;</span><br><span class="line"></span><br><span class="line">       192.168.53.100 //vip ,指定 vip 地址</span><br><span class="line"></span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">virtual_server 192.168.53.100 3306 &#123; // 设置虚拟服务器，需要指定虚拟 IP地址和端口，ip 与端口之间用空格隔开</span><br><span class="line"></span><br><span class="line">   delay_loop 2 // 设置允许情况检查时间，单位秒</span><br><span class="line">   lb_algo rr //设置后端调度算法，这里设置 rr，即轮询算法</span><br><span class="line">   lb_kind DR  // 设置 LVS 实现负载均衡的机制，</span><br><span class="line">   persistence_timeout 60 //会话保持时间</span><br><span class="line">   protocol TCP  // 指定转发协议，有 tcp 和 udp</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">   real_server 192.168.53.199 3306 &#123;  //配置服务节点</span><br><span class="line">       weight 3     //权值</span><br><span class="line">       notify_down    /etc/keepalived/bin/mysql.sh  // 检测到 realserver 的 mysql 服务 down 后执行的脚本</span><br><span class="line">       TCP_CHECK &#123;</span><br><span class="line">            connect_timeout 3  // 连接超时时间</span><br><span class="line">            nb_get_retry 3    // 重连次数</span><br><span class="line">            delay_before_retry 3 // 重连间隔时间</span><br><span class="line">            connect_port 3306  //健康检查端口</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>启动 keepalived</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">service keepalived start</span><br><span class="line"><span class="comment"># 设置开机自启</span></span><br><span class="line">systemctl <span class="built_in">enable</span> keepalived</span><br></pre></td></tr></table></figure>
+
+<p>在 master1 上查看</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]<span class="comment"># ip addr</span></span><br><span class="line">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000</span><br><span class="line">    <span class="built_in">link</span>/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00</span><br><span class="line">    inet 127.0.0.1/8 scope host lo</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet6 ::1/128 scope host </span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP group default qlen 1000</span><br><span class="line">    <span class="built_in">link</span>/ether 00:1c:42:22:37:06 brd ff:ff:ff:ff:ff:ff</span><br><span class="line">    inet 192.168.53.191/22 brd 192.168.55.255 scope global noprefixroute dynamic eth0</span><br><span class="line">       valid_lft 69601sec preferred_lft 69601sec</span><br><span class="line">    inet 192.168.53.100/32 scope global eth0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet6 fe80::21c:42ff:fe22:3706/64 scope <span class="built_in">link</span> noprefixroute </span><br><span class="line">       valid_lft forever preferred_lft forever</span><br></pre></td></tr></table></figure>
+
+<p>在 master2 上查看</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost keepalived]<span class="comment"># ip addr</span></span><br><span class="line">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000</span><br><span class="line">    <span class="built_in">link</span>/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00</span><br><span class="line">    inet 127.0.0.1/8 scope host lo</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet6 ::1/128 scope host </span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP group default qlen 1000</span><br><span class="line">    <span class="built_in">link</span>/ether 00:1c:42:7d:37:4f brd ff:ff:ff:ff:ff:ff</span><br><span class="line">    inet 192.168.53.199/22 brd 192.168.55.255 scope global noprefixroute dynamic eth0</span><br><span class="line">       valid_lft 69567sec preferred_lft 69567sec</span><br><span class="line">    inet6 fe80::21c:42ff:fe7d:374f/64 scope <span class="built_in">link</span> noprefixroute </span><br><span class="line">       valid_lft forever preferred_lft forever</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-4-添加检测脚本"><a href="#4-4-添加检测脚本" class="headerlink" title="4.4 添加检测脚本"></a>4.4 添加检测脚本</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> /etc/keepalived/bin</span><br><span class="line">vim /etc/keepalived/bin/mysql.sh</span><br><span class="line"><span class="comment"># 内容如下</span></span><br><span class="line"><span class="comment">#!/bin/bash</span></span><br><span class="line">pkill keepalived</span><br><span class="line">/sbin/ifdown eth0 &amp;&amp; /sbin/ifup eth0</span><br><span class="line"></span><br><span class="line"><span class="comment"># 赋予可执行权限</span></span><br><span class="line"><span class="built_in">chmod</span> +x /etc/keepalived/bin/mysql.sh</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>连接即可使用192.168.53.100创建数据库使用</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">在 host1 上修改</span></span><br><span class="line">! Configuration File for keepalived</span><br><span class="line"></span><br><span class="line">global_defs &#123;  #主要是配置故障发生时的通知对象以及机器标识。</span><br><span class="line">   router_id HA_MySQL  #标识，双主相同</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance VI_1 &#123;  #用来定义对外提供服务的VIP区域以及机器标识</span><br><span class="line">    state BACKUP  #注意，主从两端都配置成了backup，因为使用了nopreempt,即非抢占模式</span><br><span class="line">    interface eth0</span><br><span class="line">    virtual_router_id 51  #分组，主备相同</span><br><span class="line">    priority 100  #优先级，这个高一点则先把他当作为master</span><br><span class="line">    advert_int 1</span><br><span class="line">    nopreempt  #不主动抢占资源，设置非抢占模式</span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS</span><br><span class="line">        auth_pass 1111</span><br><span class="line">    &#125;</span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        192.168.1.10</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">virtual_server 192.168.1.10 3306 &#123;  #设置虚拟服务器，需要指定虚拟IP地址和服务端口，IP与端口直接用空格隔开</span><br><span class="line">    delay_loop 2  #设置运行情况检查时间，单位是秒</span><br><span class="line">    lb_algo wrr   #设置后端调度算法，rr为轮询算法，这里设置的wrr是带有权重的轮询算法</span><br><span class="line">    lb_kind DR    #设置LVS实现负载均衡的机制。有NAR、TUN、DR三个模式可选</span><br><span class="line">    persistence_timeout 60  #回话保持的时间，单位是秒。这个选项对动态网页是非常有用的，为了集群系统中的session</span><br><span class="line">                            #共享提供了一个很好的解决方案。有了这个会话保持功能，用户的请求会被一直分发到某个服务节点，</span><br><span class="line">                            #直到超过这个会话的保持时间。</span><br><span class="line">   protocol TCP   #指定转发协议类型，有TCP和UDP两种</span><br><span class="line"></span><br><span class="line">    real_server 192.168.1.51 3306 &#123;  #配置服务节点1，需要制定real server的真实IP地址和端口号，IP与端口之间用空格隔开</span><br><span class="line">        weight 3   #配置服务节点的权值，权值大小用数字表示，数字越大，权值越高，设置全职大小为分区不同性能的服务器</span><br><span class="line">        notify_down /usr/local/keepalived/mysql.sh #检测到real server的mysql服务down后执行的脚本</span><br><span class="line">        TCP_CHECK &#123;</span><br><span class="line">            connect_timeout 3  #连接超时时间</span><br><span class="line">            nb_get_retry 3     #重连次数</span><br><span class="line">            delay_before_retry 3 #重连间隔时间</span><br><span class="line">            connect_port 3306  #健康检查端口，设置车工自己mysql的服务端口</span><br><span class="line"></span><br><span class="line">     &#125; </span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">在 hosts2 上修改</span></span><br><span class="line">! Configuration File for keepalived</span><br><span class="line"></span><br><span class="line">global_defs &#123;  </span><br><span class="line">   router_id HA_MySQL  </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance VI_1 &#123;  </span><br><span class="line">    state BACKUP  </span><br><span class="line">    interface eth0</span><br><span class="line">    virtual_router_id 51  </span><br><span class="line">    priority 90   #优先级，这个要低一点</span><br><span class="line">    advert_int 1</span><br><span class="line">    #nopreempt  #这里的nopreempt(即非抢占模式)去掉，因为该配置项一般只在优先级高的mysql上配置 </span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS</span><br><span class="line">        auth_pass 1111</span><br><span class="line">    &#125;</span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        192.168.1.10</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">virtual_server 192.168.1.52 3306 &#123;  </span><br><span class="line">    delay_loop 2 </span><br><span class="line">    lb_algo wrr   </span><br><span class="line">    lb_kind DR   </span><br><span class="line">    persistence_timeout 60                            </span><br><span class="line">    protocol TCP   </span><br><span class="line"></span><br><span class="line">    real_server 192.168.1.9 3306 &#123;  </span><br><span class="line">        weight 3   </span><br><span class="line">        notify_down /usr/local/keepalived/mysql.sh </span><br><span class="line">        TCP_CHECK &#123;</span><br><span class="line">            connect_timeout 3  </span><br><span class="line">            nb_get_retry 3    </span><br><span class="line">            delay_before_retry 3 </span><br><span class="line">            connect_port 3306  </span><br><span class="line"></span><br><span class="line">    &#125; </span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>配置杀死 keepalived 的脚本 vi &#x2F;usr&#x2F;local&#x2F;keepalived&#x2F;mysql.sh</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment">#kill掉keepalived进程，以防止脑裂问题。</span></span><br><span class="line">pkill keepalived</span><br></pre></td></tr></table></figure>
+
+<p>启动keepalived服务（两台都要启动）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chmod</span> +x /usr/local/keepalived/mysql.sh</span><br><span class="line">/etc/init.d/keepalived start</span><br></pre></td></tr></table></figure>
+
+<p>参考文档：<a target="_blank" rel="noopener" href="https://blog.csdn.net/shiyu1157758655/article/details/78672110">https://blog.csdn.net/shiyu1157758655/article/details/78672110</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag"><i class="fa fa-tag"></i> 运维</a>
+              <a href="/tags/%E8%BD%AF%E4%BB%B6%E5%AE%89%E8%A3%85/" rel="tag"><i class="fa fa-tag"></i> 软件安装</a>
+              <a href="/tags/MySQL/" rel="tag"><i class="fa fa-tag"></i> MySQL</a>
+              <a href="/tags/Linux/" rel="tag"><i class="fa fa-tag"></i> Linux</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/20/%E8%BF%90%E7%BB%B4%E6%8F%90%E5%8D%87-kubernetes%EF%BC%8801%EF%BC%89/" rel="prev" title="运维提升——Kubernetes（01）">
+      <i class="fa fa-chevron-left"></i> 运维提升——Kubernetes（01）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/21/python-%E8%87%AA%E5%8A%A8%E5%8C%96%E8%BF%90%E7%BB%B4-%EF%BC%8801%EF%BC%89/" rel="next" title="Python 自动化运维 （01）">
+      Python 自动化运维 （01） <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88"><span class="nav-number">1.</span> <span class="nav-text">MySQL 高可用方案</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#0-%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.1.</span> <span class="nav-text">0.介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="nav-number">1.2.</span> <span class="nav-text">1. 环境准备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%9C%A8%E4%B8%A4%E5%8F%B0%E6%9C%BA%E5%99%A8%E4%B8%8A%E5%88%86%E5%88%AB%E5%AE%89%E8%A3%85-mysql5-7"><span class="nav-number">1.3.</span> <span class="nav-text">2. 在两台机器上分别安装 mysql5.7</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E9%85%8D%E7%BD%AE%E4%B8%A4%E5%8F%B0-mysql-%E4%B8%BB%E4%B8%BB%E5%90%8C%E6%AD%A5"><span class="nav-number">1.4.</span> <span class="nav-text">3. 配置两台 mysql 主主同步</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-%E5%B0%86-master1-%E8%AE%BE%E4%B8%BA-master2-%E7%9A%84%E4%B8%BB%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">1.4.0.1.</span> <span class="nav-text">3.1 将 master1 设为 master2 的主服务器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-%E5%B0%86-master2-%E8%AE%BE%E4%B8%BA-master1-%E7%9A%84%E4%B8%BB%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">1.4.0.2.</span> <span class="nav-text">3.2 将 master2 设为 master1 的主服务器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-%E6%B5%8B%E8%AF%95%E4%B8%BB%E4%B8%BB%E5%90%8C%E6%AD%A5"><span class="nav-number">1.4.0.3.</span> <span class="nav-text">3.3 测试主主同步</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-keepalived-%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE"><span class="nav-number">1.5.</span> <span class="nav-text">4. keepalived 安装配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.5.0.1.</span> <span class="nav-text">4.1 介绍</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-keepalived-%E5%AE%89%E8%A3%85"><span class="nav-number">1.5.0.2.</span> <span class="nav-text">4.2 keepalived 安装</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-keepalived-%E9%85%8D%E7%BD%AE"><span class="nav-number">1.5.0.3.</span> <span class="nav-text">4.3 keepalived 配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-4-%E6%B7%BB%E5%8A%A0%E6%A3%80%E6%B5%8B%E8%84%9A%E6%9C%AC"><span class="nav-number">1.5.0.4.</span> <span class="nav-text">4.4 添加检测脚本</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Sven</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">91</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/sven0219" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;sven0219" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hi@svenshen.com" title="E-Mail → mailto:hi@svenshen.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="visitors-count">
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_uv">
+       Visitors :<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_pv">
+       Views : <span id="busuanzi_value_site_pv"></span>
+    </span>
+</div>
+
+<div class="copyright">
+  
+  &copy; 2022 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sven</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">276k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'ffcb8e4e993246f4af3c',
+      clientSecret: '83d999522d8c8f95f55bff4c2040b92858084127',
+      repo        : 'sven0219.github.io',
+      owner       : 'sven0219',
+      admin       : ['sven0219'],
+      id          : 'a70470542afc3d6260dd5439d6eb8174',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

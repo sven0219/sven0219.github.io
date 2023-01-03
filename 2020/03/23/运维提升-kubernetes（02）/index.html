@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.52ynn.top","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":true,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="Kubernetes 基本概念和术语 晚上刚下班，学习下 Kubernetes 的基本概念和术语，先了解基本概念，后面不至于学的时候一脸懵逼  MasterKubernetes里面 Master指的是集群控制节点，每个 Kubernetes 集群里面都需要有一个Master节点负责整个集群的管理和控制，基本上 Kubernetes 的所有控制指令都发送给它，它负责具体的执行过程。Master节点一">
+<meta property="og:type" content="article">
+<meta property="og:title" content="运维提升——Kubernetes（02）">
+<meta property="og:url" content="https://blog.52ynn.top/2020/03/23/%E8%BF%90%E7%BB%B4%E6%8F%90%E5%8D%87-kubernetes%EF%BC%8802%EF%BC%89/index.html">
+<meta property="og:site_name" content="Sven&#39;s Blog">
+<meta property="og:description" content="Kubernetes 基本概念和术语 晚上刚下班，学习下 Kubernetes 的基本概念和术语，先了解基本概念，后面不至于学的时候一脸懵逼  MasterKubernetes里面 Master指的是集群控制节点，每个 Kubernetes 集群里面都需要有一个Master节点负责整个集群的管理和控制，基本上 Kubernetes 的所有控制指令都发送给它，它负责具体的执行过程。Master节点一">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-03-23T21:50:58.000Z">
+<meta property="article:modified_time" content="2023-01-03T04:48:39.634Z">
+<meta property="article:author" content="Sven">
+<meta property="article:tag" content="运维">
+<meta property="article:tag" content="教程">
+<meta property="article:tag" content="k8s">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.52ynn.top/2020/03/23/%E8%BF%90%E7%BB%B4%E6%8F%90%E5%8D%87-kubernetes%EF%BC%8802%EF%BC%89/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>运维提升——Kubernetes（02） | Sven's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Sven's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Do more ,say less !</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://blog.52ynn.top/2020/03/23/%E8%BF%90%E7%BB%B4%E6%8F%90%E5%8D%87-kubernetes%EF%BC%8802%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Sven">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sven's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          运维提升——Kubernetes（02）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-03-23 21:50:58" itemprop="dateCreated datePublished" datetime="2020-03-23T21:50:58+00:00">2020-03-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-01-03 04:48:39" itemprop="dateModified" datetime="2023-01-03T04:48:39+00:00">2023-01-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/skills/" itemprop="url" rel="index"><span itemprop="name">skills</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.3k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Kubernetes-基本概念和术语"><a href="#Kubernetes-基本概念和术语" class="headerlink" title="Kubernetes 基本概念和术语"></a>Kubernetes 基本概念和术语</h1><blockquote>
+<p>晚上刚下班，学习下 Kubernetes 的基本概念和术语，先了解基本概念，后面不至于学的时候一脸懵逼</p>
+</blockquote>
+<h2 id="Master"><a href="#Master" class="headerlink" title="Master"></a>Master</h2><p><code>Kubernetes</code>里面 Master指的是集群控制节点，每个 Kubernetes 集群里面都需要有一个Master节点负责整个集群的管理和控制，基本上 Kubernetes 的所有控制指令都发送给它，它负责具体的执行过程。Master节点一般占据一个独立的服务器（高可用部署建议使用 3 台服务器），如果 Master节点宕机或者不可以，那么集群内容器应用的管理都将失效（不像 zookeeper 一样可以推选出一个新的 master 节点） Master节点上运行着一组关键进程：</p>
+<span id="more"></span>
+<ul>
+<li>Kubernetes API Servre (kube-apiserver): 提供了 HTTP Rest 接口的关键服务进程， Kubernetes 里所有资源的增删改查等操作的唯一入口，也是集群控制的入口进程。</li>
+<li>Kubernetes Controller Manager（kube-controller-manager）: Kubernetes 里面所有资源对象的自动化控制中心，可以理解为资源对象的‘大总管’。</li>
+<li>Kuberneter Scheduler (kube-scheduler): 负责资源调度（Pod 调度）的进程，相当于公司的‘调度室’。</li>
+</ul>
+<p>另外，<code>Matser</code> 节点上还需要启动一个<code>etcd</code>服务，因为<code>Kubernetes</code>里面所有资源对象的数据都是保存在<code>etcd</code>中的。</p>
+<h2 id="Node"><a href="#Node" class="headerlink" title="Node"></a>Node</h2><p>和其它高可用集群类似， Kubernetes 集群中其他机器被称为 Node 节点。和 Master 一样，Node 节点可以是一台物理主机也可以是一台虚拟机。Node 节点是 Kubernetes 集群中的工作负载节点，每个 Node 都会被 Master 分配一些工作负载（Docker 容器），当某个 Node 宕机时，其上的工作负载就会被 Master 节点自动转移到其它节点上去。 每个 Node 节点上都运行着一组关键进程：</p>
+<ul>
+<li>kubelet: 负载 Pod 对应容器的创建、启停等任务，同事与 Master 节点密切协作，实现集群管理的基本功能。</li>
+<li>kube-proxy：实现 Kubernetes Serveice 的通信和负载均衡机制的重要组件</li>
+<li>Docker Engine（Docker）：Docker 引擎，负责本机的容器创建和管理工作</li>
+</ul>
+<p>在默认情况下，安装配置启动好上述关键进程的 Node 节点会自动想 Master 节点上注册自己，Node 节点可以在运行期间动态增加到 Kubernetes 集群中。kubelet 进程会定时想 Master 节点汇报自身的情报，如操作系统、Docker 版本、机器的 CPU 和内存情况，当某个 Node 节点超过指定时间不上报信息时，Master 会判定该节点‘失联’，Node 的状态会被标记为‘Not ready’，随后 Master 会触发‘工作负载大转移’的自动流程。</p>
+<h2 id="Pod"><a href="#Pod" class="headerlink" title="Pod"></a>Pod</h2><p>Pod 是 Kubernetes 的最重要也是最基本的概念。是最小部署单元，不是一个程序&#x2F;进程，而是一个环境(包括容器、存储、网络<code>ip:port</code>、容器配置)，其中可以运行1个或多个container（docker或其他容器），在一个pod内部的container共享所有资源，包括共享pod的ip:port和磁盘。 Kubernetes 为每个 Pod 分配了<strong>唯一的</strong> IP 地址，称之为 Pod IP，一个 Pod 容器中共享 Pod IP。 Kubernetes 集群中任意两个 Pod 之间支持 TCP&#x2F;IP 直接通信。</p>
+<h2 id="Label（标签）"><a href="#Label（标签）" class="headerlink" title="Label（标签）"></a>Label（标签）</h2><p>Label 是 Kubernetes 系统中另一个核心概念。一个 Label 是一个 key &#x3D; Value 的键值对，其中 key 和 value 由用户自己指定。Label 可以附加到各种资源对象上，例如 Node、Pod、Service、RC 等，一个资源可以定义任意数量的 Label，同一个 Label 也可以被添加到任意数量的资源对象上去。 Label 相当于我们熟悉的“标签”，给某个资源对象定义一个 Label，就相当于给它打了一个标签，随后可以通过 Label Selector（标签选择器）查询和筛选拥有某些 Label 的资源对象， Kubernetes 通过这种方式实现了类似 SQL 的简单又通用的对象查询机制。相当于本篇博文的标签为 <a target="_blank" rel="noopener" href="https://www.52ynn.top/index.php/tag/k8s/" title="k8s">k8s</a> 一样，可以直接筛选同类的文章 ## Replication Controller RC 是 Kubernetes 系统中的核心概念之奕，简单的说，他其实是定义了一个期望的场景，即声明某种 Pod 的副本数量在任意时刻都符合某个预期值，所以 RC 的定义包括如下几个部分</p>
+<ul>
+<li>Pod 期待的副本数（replicas）</li>
+<li>用于筛选目标的 Pod 的 Label Selector</li>
+<li>当 Pod 的数量小于预期数量时，用于创建新 Pod 的 Pod 模板（template）</li>
+</ul>
+<p>这个就有点像阿里云的弹性伸缩</p>
+<h2 id="Deployment"><a href="#Deployment" class="headerlink" title="Deployment"></a>Deployment</h2><p>Deployment 是 Kubernetes v1.2 引入的新概念，引入的目的是为例更好的解决 Pod 的编排问题。 Deployment 相对于 RC 的一个最大的升级是我们可以随时知道当前 Pod 的‘部署’进度。</p>
+<h2 id="Horizontal-Pod-Autoscaler"><a href="#Horizontal-Pod-Autoscaler" class="headerlink" title="Horizontal Pod Autoscaler"></a>Horizontal Pod Autoscaler</h2><p>HPA 与 RC、Deployment 一样，也属于一种 Kubernetes 资源对象。通过追踪分析 RC 控制所有目标 Pod 的负载变化情况，来确定是否需要针对性的调整目标 Pod 的副本数，这是 HPA 的实现原理。</p>
+<h2 id="StatefulSet"><a href="#StatefulSet" class="headerlink" title="StatefulSet"></a>StatefulSet</h2><p>Kubernetes 中，Pod 的管理对象 RC、Deployment、DaemonSet 和 Job 都是面向无状态的服务。但显示中有很多服务是有状态的。为了能够在其它节点史昂恢复某个失败的节点，这种集群中的 Pod 需要挂接某种共享存储，为了解决这个问题，在 v1.4 版本中引入这个新的额资源对象。</p>
+<h2 id="Service（服务）"><a href="#Service（服务）" class="headerlink" title="Service（服务）"></a>Service（服务）</h2><p>Service 也是 Kubernetes 里面最核心的资源对象之奕， Kubernetes 里的每个 Service 其实就是我们经常提起的微服务结构中的一个‘微服务’。 这个概念比较重要，后续实践中慢慢学习。</p>
+<h2 id="Volume（存储卷）"><a href="#Volume（存储卷）" class="headerlink" title="Volume（存储卷）"></a>Volume（存储卷）</h2><p>Volume 是 Pod 中能够被多个容器访问的共享目录。Kubernetes 中的 Volume 的概念、用途和目的与 Docker 中的 Volume 比较类似，但不相同。</p>
+<h2 id="Persistent-Volume"><a href="#Persistent-Volume" class="headerlink" title="Persistent Volume"></a>Persistent Volume</h2><p>PV 可以理解成 Kubernetes 集群中的某个网络存储对应的一块存储，与 Volume 类似，但有一些区别：</p>
+<ul>
+<li>PV 只能是网络存储，不属于任何 Node，但可以在每个 Node 上访问</li>
+<li>PV 并不是定义在 Pod 上的，而是独立于 Pod 职位的定义。</li>
+<li>PV 目前支持的类型包括： gcePersistentDisk、AWSElasticBlockStore、AzureFile、NFS、iSCSI、RBD（Rados BlockDevice）等</li>
+</ul>
+<h2 id="Namespace（命名空间）"><a href="#Namespace（命名空间）" class="headerlink" title="Namespace（命名空间）"></a>Namespace（命名空间）</h2><p>Namespace（命名空间）是 Kubernetes 中用于实现多租户的资源隔离。Namespace 通过将集群内部的资源对象‘分配’到不同的 Namespace 中，形成逻辑上分组的不同项目、小组或用户组，便于不同分组在共享使用整个集群的资源的同时还能被分别管理。 Kubernetes 集群在启动后，会创建一个名为‘default’的 Namespace。</p>
+<h2 id="Annotation（注解）"><a href="#Annotation（注解）" class="headerlink" title="Annotation（注解）"></a>Annotation（注解）</h2><p>Annotation 与 Label 类似，也使用 key&#x2F;value 键值对的形式进行定义。不同的是 Label 具有严格的命名规则，它定义的是 Kubernetes 对象的元数据（Metadata），并且用户 Label Selector。而 Annotation 则是用户任意定义的“附加”信息，以便于外部工具进行查找，很多时候，Kubernetes 的模块自身会通过 Annotation 的方式标记资源对象的一些特殊信息</p>
+<h2 id="写在后面"><a href="#写在后面" class="headerlink" title="写在后面"></a>写在后面</h2><p>Kubernetes 中的概念术语相对于 Docker 而言还是比较多的，而且也比较复杂，今天只是简单的过了一遍，让自己的脑子中有一个基本的印象，等后续学习中遇到相关的概念再进行一个加深的理解。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag"><i class="fa fa-tag"></i> 运维</a>
+              <a href="/tags/%E6%95%99%E7%A8%8B/" rel="tag"><i class="fa fa-tag"></i> 教程</a>
+              <a href="/tags/k8s/" rel="tag"><i class="fa fa-tag"></i> k8s</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/21/python-%E8%87%AA%E5%8A%A8%E5%8C%96%E8%BF%90%E7%BB%B4-%EF%BC%8801%EF%BC%89/" rel="prev" title="Python 自动化运维 （01）">
+      <i class="fa fa-chevron-left"></i> Python 自动化运维 （01）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/24/nginx-%E9%85%8D%E7%BD%AE%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86/" rel="next" title="Nginx 配置正向代理">
+      Nginx 配置正向代理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Kubernetes-%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E5%92%8C%E6%9C%AF%E8%AF%AD"><span class="nav-number">1.</span> <span class="nav-text">Kubernetes 基本概念和术语</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Master"><span class="nav-number">1.1.</span> <span class="nav-text">Master</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Node"><span class="nav-number">1.2.</span> <span class="nav-text">Node</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Pod"><span class="nav-number">1.3.</span> <span class="nav-text">Pod</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Label%EF%BC%88%E6%A0%87%E7%AD%BE%EF%BC%89"><span class="nav-number">1.4.</span> <span class="nav-text">Label（标签）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Deployment"><span class="nav-number">1.5.</span> <span class="nav-text">Deployment</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Horizontal-Pod-Autoscaler"><span class="nav-number">1.6.</span> <span class="nav-text">Horizontal Pod Autoscaler</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#StatefulSet"><span class="nav-number">1.7.</span> <span class="nav-text">StatefulSet</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Service%EF%BC%88%E6%9C%8D%E5%8A%A1%EF%BC%89"><span class="nav-number">1.8.</span> <span class="nav-text">Service（服务）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Volume%EF%BC%88%E5%AD%98%E5%82%A8%E5%8D%B7%EF%BC%89"><span class="nav-number">1.9.</span> <span class="nav-text">Volume（存储卷）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Persistent-Volume"><span class="nav-number">1.10.</span> <span class="nav-text">Persistent Volume</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Namespace%EF%BC%88%E5%91%BD%E5%90%8D%E7%A9%BA%E9%97%B4%EF%BC%89"><span class="nav-number">1.11.</span> <span class="nav-text">Namespace（命名空间）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Annotation%EF%BC%88%E6%B3%A8%E8%A7%A3%EF%BC%89"><span class="nav-number">1.12.</span> <span class="nav-text">Annotation（注解）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E5%90%8E%E9%9D%A2"><span class="nav-number">1.13.</span> <span class="nav-text">写在后面</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Sven</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">91</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/sven0219" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;sven0219" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hi@svenshen.com" title="E-Mail → mailto:hi@svenshen.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="visitors-count">
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_uv">
+       Visitors :<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_pv">
+       Views : <span id="busuanzi_value_site_pv"></span>
+    </span>
+</div>
+
+<div class="copyright">
+  
+  &copy; 2022 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sven</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">276k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'ffcb8e4e993246f4af3c',
+      clientSecret: '83d999522d8c8f95f55bff4c2040b92858084127',
+      repo        : 'sven0219.github.io',
+      owner       : 'sven0219',
+      admin       : ['sven0219'],
+      id          : '00bd954eceaf95e8d0eca05c63c915a6',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
